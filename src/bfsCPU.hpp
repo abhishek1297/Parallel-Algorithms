@@ -8,10 +8,9 @@
 #ifndef BFSCPU_HPP_
 #define BFSCPU_HPP_
 #include "graph.hpp"
+namespace bfsCPU {
+	void bfsUtil( int source, Graph &G, std::vector<int> &distance);
 
-void bfsCPU( int source, Graph &G, std::vector<int> &distance,
-		std::vector<bool> &visited);
-
-double execBfsCPU(Graph &G, int nV);
-
+	double execute(Graph &G, std::vector<int> &distanceCheck,int source = 0);
+}
 #endif /* BFSCPU_HPP_ */

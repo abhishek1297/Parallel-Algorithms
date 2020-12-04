@@ -1,0 +1,22 @@
+/*
+ * bfsGPU.cuh
+ *
+ *  Created on: 27-Nov-2020
+ *      Author: abhishek
+ */
+
+#ifndef BFSGPU_HPP_
+#define BFSGPU_HPP_
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_device_runtime_api.h>
+#include <device_launch_parameters.h>
+
+namespace bfsGPU {
+	void initMemory(Graph &G, int source, std::vector<int> &distanceCheck);
+
+	void execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
+
+	void freeMemory();
+}
+#endif /* BFSGPU_HPP_ */

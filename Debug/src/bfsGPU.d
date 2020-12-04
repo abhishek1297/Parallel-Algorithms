@@ -1,4 +1,4 @@
-src/main.o : ../src/main.cu \
+src/bfsGPU.o : ../src/bfsGPU.cu \
     /usr/include/stdc-predef.h \
     /usr/local/cuda-11.0/bin/../targets/x86_64-linux/include/cuda_runtime.h \
     /usr/local/cuda-11.0/bin/../targets/x86_64-linux/include/crt/host_config.h \

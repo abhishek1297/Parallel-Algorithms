@@ -4,52 +4,50 @@
 #include <chrono>
 #include <algorithm>
 
-void bfsCPU( int source, Graph &G, std::vector<int> &distance, std::vector<bool> &visited) {
 
-	std::queue< int> queue;
-	 int vertex, child;
+namespace bfsCPU {
+	void bfsUtil( int source, Graph &G, std::vector<int> &distance) {
 
-	queue.push(source);
-	visited[source] = true;
-	distance[source] = 0;
+		std::queue< int> queue;
+		int vertex, child;
 
-	while(!queue.empty()) {
+		queue.push(source);
+		distance[source] = 0;
 
-		vertex = queue.front();
-		queue.pop();
+		while(!queue.empty()) {
 
-		for ( int i=G.edgeOffsets_m[vertex]; i<G.edgeOffsets_m[vertex]+
-		G.vertexDegree_m[vertex]; ++i) {
-			child = G.adjacencyList_m[i];
-			if (!visited[child]) {
+			vertex = queue.front();
+			queue.pop();
 
-				visited[child] = true;
-				distance[child] = distance[vertex] + 1;
-				queue.push(child);
+			for ( int i=G.edgeOffsets_m[vertex]; i<G.edgeOffsets_m[vertex]+
+												G.vertexDegree_m[vertex]; ++i) {
+
+				child = G.adjacencyList_m[i];
+				if (distance[child] == -1) {
+
+					distance[child] = distance[vertex] + 1;
+					queue.push(child);
+				}
 			}
 		}
 	}
-}
 
 
-double execBfsCPU(Graph &G, int nV) {
+	double execute(Graph &G, std::vector<int> &distanceCheck, int source) {
 
-	std::vector<int> distance(nV, -1);
-	std::vector<bool> visited(nV, false);
+		std::vector<int> distance(G.numVertices_m, -1);//distance from source
 
-	auto start = std::chrono::high_resolution_clock::now();
+		std::cout << "Executing...\n";
+		auto start = std::chrono::high_resolution_clock::now();
 
-	bfsCPU(0, G, distance, visited);
+		bfsUtil(source, G, distance);
+		auto end = std::chrono::high_resolution_clock::now();
 
-	auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> t = end - start;
+		std::cout << "\nTime: " << t.count();
 
-	std::chrono::duration<double, std::micro> t = end - start;
-	std::cout << "Time: " << t.count();
-
-//	std::cout << "\n----------------\n";
-//	for (int i=0; i<nV; ++i)
-//		std::cout << i << ": " << distance[i] << std::endl;
-	std::cout << std::endl;
-	std::cout << *(std::max_element(distance.begin(), distance.end())) << std::endl;
-	return t.count();
+		std::cout << std::endl;
+		distanceCheck = std::move(distance);
+		return t.count();
+	}
 }
