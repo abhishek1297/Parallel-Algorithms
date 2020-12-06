@@ -32,21 +32,15 @@ namespace bfsCPU {
 		}
 	}
 
-
 	double execute(Graph &G, std::vector<int> &distanceCheck, int source) {
 
 		std::vector<int> distance(G.numVertices_m, -1);//distance from source
-
-		std::cout << "Executing...\n";
 		auto start = std::chrono::high_resolution_clock::now();
 
 		bfsUtil(source, G, distance);
 		auto end = std::chrono::high_resolution_clock::now();
 
 		std::chrono::duration<double, std::milli> t = end - start;
-		std::cout << "\nTime: " << t.count();
-
-		std::cout << std::endl;
 		distanceCheck = std::move(distance);
 		return t.count();
 	}

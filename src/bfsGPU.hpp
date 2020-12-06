@@ -15,7 +15,10 @@
 namespace bfsGPU {
 	void initMemory(Graph &G, int source, std::vector<int> &distanceCheck);
 
-	void execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
+	extern "C" __global__ void kernelBfs(int depth, int *d_adjList, int *d_edgeOffsets,
+			int *d_vertexDegree, int *d_distance, int *d_currQ, int *d_currQSize,
+			int *d_nextQ, int *d_nextQSize);
+	double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
 
 	void freeMemory();
 }
