@@ -1,0 +1,66 @@
+	extern "C" __global__ void kernelBfs(int depth, int *d_adjList, int *d_edgeOffsets,
+				int *d_vertexDegree, int *d_distance, int *d_currQ, int *d_currQSize,
+				int *d_nextQ, int *d_nextQSize) {
+
+			/*
+			 * d_variable is device allocated variables
+			 * s_variable is shared memory variable
+			 */
+/*			int t = threadIdx.x + blockDim.x * blockIdx.x;
+			if (t < *d_currQSize) {
+				int parent = d_currQ[t];
+				for (int i=d_edgeOffsets[parent]; i<d_edgeOffsets[parent]+d_vertexDegree[parent]; ++i) {
+					int child = d_adjList[i];
+					if (atomicMin(&d_distance[child], INT_MAX) == -1) {
+						d_distance[child] = depth + 1;
+						int idx = atomicAdd(d_nextQSize, 1);
+						d_nextQ[idx] = child;
+					}
+				}
+			}
+			__syncthreads();*/
+//			__shared__ int s_nextQ[BLOCK_QUEUE_SIZE];
+			__shared__ int s_subNextQ[][], s_subQId;
+			__shared__ int s_nextQSize, s_blockGlobalQIdx;
+
+			//obtain thread id
+			int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
+			if (tIdx == 0) //only one thread needed to set the size.
+				s_nextQSize = 0;
+			__syncthreads();
+
+			if (tIdx < *d_currQSize) {
+
+				const int parent = d_currQ[tIdx];//get current values in parallel
+
+				for (int i=d_edgeOffsets[parent]; i<d_edgeOffsets[parent]+d_vertexDegree[parent]; ++i) {
+
+					const int child = d_adjList[i];
+					if (atomicMin(&d_distance[child], INT_MAX) == -1) {
+
+						d_distance[child] = depth + 1;
+						const int sharedQIdx = atomicAdd(&s_nextQSize, 1);
+
+						if (sharedQIdx < BLOCK_QUEUE_SIZE) { //if the shared memory is not full, fill the shared queue
+
+							s_nextQ[sharedQIdx] = child;
+						}
+						else { //fill the global queue
+
+							s_nextQSize = BLOCK_QUEUE_SIZE;
+							const int globalQIdx = atomicAdd(d_nextQSize, 1);
+							d_nextQ[globalQIdx] = child;
+						}
+					}
+				}
+			}
+			__syncthreads();
+
+			if (threadIdx.x == 0) //offset for global memory
+				s_blockGlobalQIdx = atomicAdd(d_nextQSize, s_nextQSize);
+			__syncthreads();
+
+			for (int i=threadIdx.x; i<s_nextQSize; i+=blockDim.x) {// fill the global memory
+				d_nextQ[s_blockGlobalQIdx + i] = s_nextQ[i];
+			}
+		}

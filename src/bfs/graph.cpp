@@ -2,12 +2,14 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
+#include <functional>
+#include <iostream>
 
 //Generates graph representation given a dataset
-Graph::Graph(const std::string &path) {
+Graph::Graph(const std::string &path, bool convertToZeroIdx):pathData_m(path) {
 
 	std::vector<std::vector<int>> adjList;
-	loadGraphFile(path, adjList);
+	loadGraphFile(path, adjList, convertToZeroIdx);
 	int nV{static_cast<int>(adjList.size())};
 	edgeOffsets_m.resize(nV);
 	vertexDegree_m.resize(nV);
@@ -23,34 +25,48 @@ Graph::Graph(const std::string &path) {
 
 	 numVertices_m = edgeOffsets_m.size();
 	 numEdges_m = adjacencyList_m.size();
-	 std::cout << "Vertices: " << numVertices_m << std::endl
-			 	<< "Edges: " << numEdges_m << std::endl;
 
 }
 
 //loading adjacency list from the dataset file.
 void Graph::loadGraphFile(const std::string &path,
-		std::vector<std::vector<int>> &adjList) {
+						  std::vector<std::vector<int>> &adjList,
+						  bool convertToZeroIdx)
+	{
 	std::ifstream ifs(path, std::ifstream::in);
 	ifs.seekg(0, ifs.beg);
 	if (ifs) {
 		std::vector<int> vec;
 		std::string nVStr, from, to;
 		std::getline(ifs, nVStr);
-		int u, v, nV;
+		int nV;
 		try {
 			nV = std::stoi(nVStr);
 			for (int i=0; i<nV; ++i,
 			adjList.push_back(std::vector<int>()));
+//			adjList.resize(nV);
+//			std::fill(adjList.begin(), adjList.end(), std::vector<int>());
 		}
 		catch(std::exception &e) {
 			std::cout << e.what();
 		}
-		while (ifs >> from >> to) {
-			u = std::stoi(from);
-			v = std::stoi(to);
-			adjList[u].push_back(v);
+		std::function<void (std::string, std::string)> store;
+		if (convertToZeroIdx) {
+			 store = [&adjList](std::string from, std::string to) {//zero based index
+				int u = std::stoi(from) - 1;
+				int v = std::stoi(to) - 1;
+				adjList[u].push_back(v);
+			 };
 		}
+		else {
+			store = [&adjList](std::string from, std::string to) {
+				int u = std::stoi(from);
+				int v = std::stoi(to);
+				adjList[u].push_back(v);
+			};
+		}
+		while (ifs >> from >> to)
+			store(from, to);
 	}
 	else
 		std::cout << "Error Loading File" << std::endl;
@@ -59,10 +75,9 @@ void Graph::loadGraphFile(const std::string &path,
 
 std::ostream& operator <<(std::ostream &out, Graph &G) {
 
-	out << "AdjList contiguous\n" ;
-	for (auto x: G.adjacencyList_m) {
-		out << x << " ";
-	}
+	out << "Name: " << G.pathData_m << std::endl
+	<< "Vertices: " << G.numVertices_m << std::endl
+	<< "Edges: " << G.numEdges_m << std::endl;
 	out << std::endl;
 	return out;
 }

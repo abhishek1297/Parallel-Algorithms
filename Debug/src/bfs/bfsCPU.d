@@ -1,6 +1,7 @@
-src/graph.o : ../src/graph.cpp \
+src/bfs/bfsCPU.o : ../src/bfs/bfsCPU.cpp \
     /usr/include/stdc-predef.h \
-    ../src/graph.hpp \
+    ../src/bfs/bfsCPU.hpp \
+    ../src/bfs/graph.hpp \
     /usr/include/c++/8/vector \
     /usr/include/c++/8/bits/stl_algobase.h \
     /usr/include/x86_64-linux-gnu/c++/8/bits/c++config.h \
@@ -176,11 +177,22 @@ src/graph.o : ../src/graph.cpp \
     /usr/include/c++/8/bits/ostream.tcc \
     /usr/include/c++/8/istream \
     /usr/include/c++/8/bits/istream.tcc \
+    /usr/include/c++/8/queue \
+    /usr/include/c++/8/deque \
+    /usr/include/c++/8/bits/stl_deque.h \
+    /usr/include/c++/8/bits/deque.tcc \
+    /usr/include/c++/8/bits/stl_heap.h \
+    /usr/include/c++/8/bits/stl_queue.h \
+    /usr/include/c++/8/bits/uses_allocator.h \
+    /usr/include/c++/8/chrono \
+    /usr/include/c++/8/ratio \
+    /usr/include/c++/8/limits \
     /usr/include/c++/8/ctime \
-    /usr/include/c++/8/fstream \
-    /usr/include/c++/8/bits/codecvt.h \
-    /usr/include/x86_64-linux-gnu/c++/8/bits/basic_file.h \
-    /usr/include/x86_64-linux-gnu/c++/8/bits/c++io.h \
-    /usr/include/c++/8/bits/fstream.tcc \
-    /usr/include/c++/8/sstream \
-    /usr/include/c++/8/bits/sstream.tcc
+    /usr/include/c++/8/bits/parse_numbers.h \
+    /usr/include/c++/8/algorithm \
+    /usr/include/c++/8/utility \
+    /usr/include/c++/8/bits/stl_relops.h \
+    /usr/include/c++/8/bits/stl_algo.h \
+    /usr/include/c++/8/bits/algorithmfwd.h \
+    /usr/include/c++/8/bits/stl_tempbuf.h \
+    /usr/include/c++/8/bits/uniform_int_dist.h

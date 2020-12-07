@@ -1,4 +1,4 @@
-src/bfsGPU.o : ../src/bfsGPU.cu \
+src/bfs/bfsGPU.o : ../src/bfs/bfsGPU.cu \
     /usr/include/stdc-predef.h \
     /usr/include/cuda_runtime.h \
     /usr/include/crt/host_config.h \
@@ -153,7 +153,7 @@ src/bfsGPU.o : ../src/bfsGPU.cu \
     /usr/include/texture_indirect_functions.h \
     /usr/include/surface_indirect_functions.h \
     /usr/include/device_launch_parameters.h \
-    ../src/graph.hpp \
+    ../src/bfs/graph.hpp \
     /usr/include/c++/8/vector \
     /usr/include/c++/8/bits/stl_algobase.h \
     /usr/include/c++/8/bits/functexcept.h \
@@ -251,7 +251,7 @@ src/bfsGPU.o : ../src/bfsGPU.cu \
     /usr/include/c++/8/bits/ostream.tcc \
     /usr/include/c++/8/istream \
     /usr/include/c++/8/bits/istream.tcc \
-    ../src/bfsGPU.hpp \
+    ../src/bfs/bfsGPU.hpp \
     /usr/include/cuda.h \
     /usr/include/c++/8/chrono \
     /usr/include/c++/8/ratio \

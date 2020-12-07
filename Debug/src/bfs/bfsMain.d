@@ -1,4 +1,4 @@
-src/main.o : ../src/main.cu \
+src/bfs/bfsMain.o : ../src/bfs/bfsMain.cu \
     /usr/include/stdc-predef.h \
     /usr/include/cuda_runtime.h \
     /usr/include/crt/host_config.h \

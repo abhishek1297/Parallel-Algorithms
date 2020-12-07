@@ -21,16 +21,15 @@ class Graph {
 	std::vector<int> adjacencyList_m; // all edges in contiguous order
 	std::vector<int> edgeOffsets_m; // offsets of edges for vertex i = 0...|V| - 1 in the list.
 	std::vector<int> vertexDegree_m; // total number of edges for vertex i = 0...|V| - 1, (offset + degree) indices
-
+	std::string pathData_m;
 	int numVertices_m = 0, numEdges_m = 0;
- 	Graph(const std::string &path);
+ 	Graph(const std::string &path, bool convertToZeroIdx = false);
 
  	friend std::ostream& operator <<(std::ostream &out, Graph &G);
 	private:
  	void loadGraphFile(const std::string &path,
- 			std::vector<std::vector<int>> &adjList);
-
-
+ 					   std::vector<std::vector<int>> &adjList,
+ 					   bool convertToZeroIdx);
 
 };
 
