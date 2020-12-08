@@ -254,4 +254,12 @@ src/bfs/bfsMain.o : ../src/bfs/bfsMain.cu \
     /usr/include/c++/8/bits/istream.tcc \
     ../src/bfs/bfsCPU.hpp \
     ../src/bfs/bfsGPU.hpp \
-    /usr/include/cuda.h
+    /usr/include/cuda.h \
+    /usr/include/c++/8/random \
+    /usr/include/c++/8/limits \
+    /usr/include/c++/8/bits/random.h \
+    /usr/include/c++/8/bits/uniform_int_dist.h \
+    /usr/include/x86_64-linux-gnu/c++/8/bits/opt_random.h \
+    /usr/include/c++/8/bits/random.tcc \
+    /usr/include/c++/8/numeric \
+    /usr/include/c++/8/bits/stl_numeric.h

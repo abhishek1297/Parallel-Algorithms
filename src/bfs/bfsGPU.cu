@@ -19,7 +19,6 @@ namespace bfsGPU {
 	int *d_parent;
 	int *d_currQ;
 	int *d_nextQ;
-	int *d_currQSize;
 	int *d_nextQSize;
 
 
@@ -32,7 +31,6 @@ namespace bfsGPU {
 		cudaMalloc(&d_distance, G.numVertices_m * sizeof(int));
 		cudaMalloc(&d_currQ, G.numVertices_m * sizeof(int));
 		cudaMalloc(&d_nextQ, G.numVertices_m * sizeof(int));
-		cudaMalloc(&d_currQSize, sizeof(int));
 		cudaMalloc(&d_nextQSize, sizeof(int));
 		//Data transfer
 		cudaMemcpy(d_adjList, G.adjacencyList_m.data(), G.numEdges_m * sizeof(int), cudaMemcpyHostToDevice);
@@ -40,8 +38,6 @@ namespace bfsGPU {
 		cudaMemcpy(d_vertexDegree, G.vertexDegree_m.data(), G.numVertices_m * sizeof(int), cudaMemcpyHostToDevice);
 		//Init kernel parameters
 		cudaMemcpy(d_currQ, &source, sizeof(int), cudaMemcpyHostToDevice);
-		const int currQSize = 1;
-		cudaMemcpy(d_currQSize, &currQSize, sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemset(d_nextQSize, 0, sizeof(int));
 		//Init distance
 		distanceCheck.resize(G.numVertices_m);
@@ -51,99 +47,111 @@ namespace bfsGPU {
 
 	}
 
-	extern "C" __global__ void kernelBfs(int depth,
-										 int *d_adjList,
-										 int *d_edgeOffsets,
-										 int *d_vertexDegree,
-										 int *d_distance,
-										 int *d_currQ,
-										 int *d_currQSize,
-										 int *d_nextQ,
-										 int *d_nextQSize) {
+	extern "C" {
+	__global__ void parentKernelBfs(int *d_adjList,
+							 int *d_edgeOffsets,
+							 int *d_vertexDegree,
+							 int *d_distance,
+							 int *d_currQ,
+							 int *d_nextQ,
+							 int *d_nextQSize) {
 
-			/*
-			 * d_variable is device allocated variables
-			 * s_variable is shared memory variable
-			 */
-				__shared__ int s_subNextQ[NUM_SUB_QUEUES][SUB_QUEUE_LEN], s_subNextQSize[NUM_SUB_QUEUES];
-				__shared__ int s_globalOffsets[NUM_SUB_QUEUES];
-				//registers
-				int child, parent,
-				subSharedQIdx /*which row of queue < NUM_SUB_QUEUES */,
-				subSharedQSize/*length of a sub queue to be incremented < SUB_QUEUE_LEN */,
-				globalQIdx /*global level queue idx < |V| */;
-				//obtain thread id
-				int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
-				if (threadIdx.x < NUM_SUB_QUEUES) //only one thread needed to set the size.
-					s_subNextQSize[threadIdx.x] = 0;
-				__syncthreads();
+		int currQSize = 1;
+		int dev_depth = 0;
+		int numBlocks;
+		while (currQSize) {
 
-				if (tIdx < *d_currQSize) {
+			numBlocks = ((currQSize - 1) / BLOCK_SIZE) + 1;
+			childKernelBfs<<<numBlocks, BLOCK_SIZE>>>(dev_depth, d_adjList, d_edgeOffsets,
+													  d_vertexDegree, d_distance,
+													  d_currQ, currQSize, d_nextQ, d_nextQSize);
+			cudaDeviceSynchronize(); // halt gpu
+			currQSize = *d_nextQSize;
+			cudaMemcpyAsync(d_currQ, d_nextQ, sizeof(int) * currQSize, cudaMemcpyDeviceToDevice);
+			cudaMemsetAsync(d_nextQSize, 0, sizeof(int));
+			++dev_depth;
 
-					parent = d_currQ[tIdx];//get current values in parallel
-					subSharedQIdx = threadIdx.x & (NUM_SUB_QUEUES - 1);
+		}
+	}
 
-					for (int i=d_edgeOffsets[parent]; i<d_edgeOffsets[parent]+d_vertexDegree[parent]; ++i) {
+	__global__ void childKernelBfs(int depth,
+								 int *d_adjList,
+								 int *d_edgeOffsets,
+								 int *d_vertexDegree,
+								 int *d_distance,
+								 int *d_currQ,
+								 int currQSize,
+								 int *d_nextQ,
+								 int *d_nextQSize) {
 
-						child = d_adjList[i];
-						if (atomicMin(&d_distance[child], INT_MAX) == -1) {
+				/*
+				 * d_variable is device allocated variables
+				 * s_variable is shared memory variable
+				 */
+					__shared__ int s_subNextQ[NUM_SUB_QUEUES][SUB_QUEUE_LEN], s_subNextQSize[NUM_SUB_QUEUES];
+					__shared__ int s_globalOffsets[NUM_SUB_QUEUES];
+					//registers
+					int child, parent,
+					subSharedQIdx /*which row of queue < NUM_SUB_QUEUES */,
+					subSharedQSize/*length of a sub queue to be incremented < SUB_QUEUE_LEN */,
+					globalQIdx /*global level queue idx < |V| */;
+					//obtain thread id
+					int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
+					if (threadIdx.x < NUM_SUB_QUEUES) //only one thread needed to set the size.
+						s_subNextQSize[threadIdx.x] = 0;
+					__syncthreads();
 
-							d_distance[child] = depth + 1;
-							// Increment sub queue size
-							subSharedQSize = atomicAdd(&s_subNextQSize[subSharedQIdx], 1);
-							if (subSharedQSize < SUB_QUEUE_LEN) {
+					if (tIdx < currQSize) {
 
-								s_subNextQ[subSharedQIdx][subSharedQSize] = child;
-							}
-							else {
+						parent = d_currQ[tIdx];//get current values in parallel
+						subSharedQIdx = threadIdx.x & (NUM_SUB_QUEUES - 1);
 
-								s_subNextQSize[subSharedQIdx] = SUB_QUEUE_LEN;
-								globalQIdx = atomicAdd(d_nextQSize, 1);
-								d_nextQ[globalQIdx] = child;
+						for (int i=d_edgeOffsets[parent]; i<d_edgeOffsets[parent]+d_vertexDegree[parent]; ++i) {
+
+							child = d_adjList[i];
+							if (atomicMin(&d_distance[child], INT_MAX) == -1) {
+
+								d_distance[child] = depth + 1;
+								// Increment sub queue size
+								subSharedQSize = atomicAdd(&s_subNextQSize[subSharedQIdx], 1);
+								if (subSharedQSize < SUB_QUEUE_LEN) {
+
+									s_subNextQ[subSharedQIdx][subSharedQSize] = child;
+								}
+								else {
+
+									s_subNextQSize[subSharedQIdx] = SUB_QUEUE_LEN;
+									globalQIdx = atomicAdd(d_nextQSize, 1);
+									d_nextQ[globalQIdx] = child;
+								}
 							}
 						}
 					}
-				}
-				__syncthreads();
+					__syncthreads();
 
-				if (threadIdx.x < NUM_SUB_QUEUES) // offsets for sub queues to global memory
-					s_globalOffsets[threadIdx.x] = atomicAdd(d_nextQSize, s_subNextQSize[threadIdx.x]);
-				__syncthreads();
+					if (threadIdx.x < NUM_SUB_QUEUES) // offsets for sub queues to global memory
+						s_globalOffsets[threadIdx.x] = atomicAdd(d_nextQSize, s_subNextQSize[threadIdx.x]);
+					__syncthreads();
 
-				for (int t=threadIdx.x; t<SUB_QUEUE_LEN; t+=blockDim.x) {
+					for (int t=threadIdx.x; t<SUB_QUEUE_LEN; t+=blockDim.x) {
 
-					for (int i=0; i<NUM_SUB_QUEUES; ++i) {
-						if (s_subNextQSize[i] != 0) {
-							d_nextQ[s_globalOffsets[i] + t] = s_subNextQ[i][t];
+						for (int i=0; i<NUM_SUB_QUEUES; ++i) {
+							if (s_subNextQSize[i] != 0) {
+								d_nextQ[s_globalOffsets[i] + t] = s_subNextQ[i][t];
+							}
 						}
 					}
-				}
+		}
 	}
 
 	double execute(Graph &G, std::vector<int> &distanceCheck, int source) {
 
 		//initialize data
 		initMemory(G, source, distanceCheck);
-		//execution
-
-		int h_currQSize{1};
-		int numBlocks{0}, depth{0};
-
+		//executio
 		auto start = std::chrono::high_resolution_clock::now();
-		while (h_currQSize) {
-
-			numBlocks = ((h_currQSize - 1) / BLOCK_SIZE) + 1;
-			kernelBfs<<<numBlocks, BLOCK_SIZE>>>(depth, d_adjList, d_edgeOffsets, d_vertexDegree, d_distance,
-					d_currQ, d_currQSize, d_nextQ, d_nextQSize);
-			cudaDeviceSynchronize(); // halt cpu
-			std::swap(d_currQ, d_nextQ);
-			cudaMemcpy(d_currQSize, d_nextQSize, sizeof(int), cudaMemcpyDeviceToDevice);
-			cudaMemset(d_nextQSize, 0, sizeof(int));
-			cudaMemcpy(&h_currQSize, d_currQSize, sizeof(int), cudaMemcpyDeviceToHost);
-			++depth;
-
-		}
-
+		parentKernelBfs<<<1, 1>>>(d_adjList, d_edgeOffsets, d_vertexDegree, d_distance,
+								  d_currQ, d_nextQ, d_nextQSize);
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> t = end - start;
 		//fill the distances obtained for comparison
@@ -163,7 +171,6 @@ namespace bfsGPU {
 		cudaFree(d_parent);
 		cudaFree(d_currQ);
 		cudaFree(d_nextQ);
-		cudaFree(d_currQSize);
 		cudaFree(d_nextQSize);
 	}
 }
