@@ -1,1 +1,1 @@
-# Parallel-Algorithms
+# cuPath: A GPU accelerated Pathfinding
