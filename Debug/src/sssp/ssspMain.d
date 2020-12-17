@@ -1,6 +1,7 @@
-src/bfs/graph.o : ../src/bfs/graph.cpp \
+src/sssp/ssspMain.o : ../src/sssp/ssspMain.cpp \
     /usr/include/stdc-predef.h \
-    ../src/bfs/graph.hpp \
+    ../src/sssp/ssspCPU.hpp \
+    ../src/sssp/../graph.hpp \
     /usr/include/c++/8/vector \
     /usr/include/c++/8/bits/stl_algobase.h \
     /usr/include/x86_64-linux-gnu/c++/8/bits/c++config.h \
@@ -176,20 +177,46 @@ src/bfs/graph.o : ../src/bfs/graph.cpp \
     /usr/include/c++/8/bits/ostream.tcc \
     /usr/include/c++/8/istream \
     /usr/include/c++/8/bits/istream.tcc \
+    /usr/include/c++/8/climits \
+    /usr/lib/gcc/x86_64-linux-gnu/8/include/limits.h \
+    /usr/lib/gcc/x86_64-linux-gnu/8/include/syslimits.h \
+    /usr/include/limits.h \
+    /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
+    /usr/include/x86_64-linux-gnu/bits/local_lim.h \
+    /usr/include/linux/limits.h \
+    /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
+    /usr/include/x86_64-linux-gnu/bits/xopen_lim.h \
+    /usr/include/x86_64-linux-gnu/bits/uio_lim.h \
+    /usr/include/c++/8/chrono \
+    /usr/include/c++/8/ratio \
+    /usr/include/c++/8/limits \
     /usr/include/c++/8/ctime \
-    /usr/include/c++/8/fstream \
-    /usr/include/c++/8/bits/codecvt.h \
-    /usr/include/x86_64-linux-gnu/c++/8/bits/basic_file.h \
-    /usr/include/x86_64-linux-gnu/c++/8/bits/c++io.h \
-    /usr/include/c++/8/bits/fstream.tcc \
-    /usr/include/c++/8/sstream \
-    /usr/include/c++/8/bits/sstream.tcc \
-    /usr/include/c++/8/functional \
-    /usr/include/c++/8/tuple \
+    /usr/include/c++/8/bits/parse_numbers.h \
+    /usr/include/c++/8/algorithm \
     /usr/include/c++/8/utility \
     /usr/include/c++/8/bits/stl_relops.h \
-    /usr/include/c++/8/array \
-    /usr/include/c++/8/bits/uses_allocator.h \
-    /usr/include/c++/8/bits/invoke.h \
-    /usr/include/c++/8/bits/refwrap.h \
-    /usr/include/c++/8/bits/std_function.h
+    /usr/include/c++/8/bits/stl_algo.h \
+    /usr/include/c++/8/bits/algorithmfwd.h \
+    /usr/include/c++/8/bits/stl_heap.h \
+    /usr/include/c++/8/bits/stl_tempbuf.h \
+    /usr/include/c++/8/bits/uniform_int_dist.h \
+    ../src/sssp/ssspGPU.hpp \
+    /usr/include/cuda.h \
+    /usr/include/c++/8/stdlib.h \
+    /usr/include/cuda_runtime.h \
+    /usr/include/crt/host_config.h \
+    /usr/include/builtin_types.h \
+    /usr/include/device_types.h \
+    /usr/include/crt/host_defines.h \
+    /usr/include/driver_types.h \
+    /usr/include/vector_types.h \
+    /usr/include/surface_types.h \
+    /usr/include/texture_types.h \
+    /usr/include/library_types.h \
+    /usr/include/channel_descriptor.h \
+    /usr/include/cuda_runtime_api.h \
+    /usr/include/cuda_device_runtime_api.h \
+    /usr/include/driver_functions.h \
+    /usr/include/vector_functions.h \
+    /usr/include/vector_functions.hpp \
+    /usr/include/device_launch_parameters.h

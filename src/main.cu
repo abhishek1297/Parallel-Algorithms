@@ -8,9 +8,9 @@
  * this software and related documentation outside the terms of the EULA
  * is strictly prohibited.
  */
-#include "bfs/bfsMain.hpp"
-
-
-int main() {
-	return bfsMain();
-}
+//#include "bfs/bfsMain.hpp"
+//
+//
+//int main() {
+//	return bfsMain();
+//}

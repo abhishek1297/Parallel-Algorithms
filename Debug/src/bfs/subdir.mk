@@ -8,22 +8,19 @@ CU_SRCS += \
 ../src/bfs/bfsMain.cu 
 
 CPP_SRCS += \
-../src/bfs/bfsCPU.cpp \
-../src/bfs/graph.cpp 
+../src/bfs/bfsCPU.cpp 
 
 OBJS += \
 ./src/bfs/bfsCPU.o \
 ./src/bfs/bfsGPU.o \
-./src/bfs/bfsMain.o \
-./src/bfs/graph.o 
+./src/bfs/bfsMain.o 
 
 CU_DEPS += \
 ./src/bfs/bfsGPU.d \
 ./src/bfs/bfsMain.d 
 
 CPP_DEPS += \
-./src/bfs/bfsCPU.d \
-./src/bfs/graph.d 
+./src/bfs/bfsCPU.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

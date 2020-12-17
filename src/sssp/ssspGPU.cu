@@ -1,7 +1,9 @@
-#include "bfsGPU.hpp"
+#include "ssspGPU.hpp"
 #include <chrono>
+#include <climits>
+#include <thrust/sort.h>
 
-namespace bfsGPU {
+namespace ssspGPU {
 
 	const int BLOCK_SIZE = 1024;
 //	const int BLOCK_QUEUE_SIZE = 128;
@@ -11,6 +13,7 @@ namespace bfsGPU {
 
 	//device pointers
 	int *d_adjList;
+	int *d_edgeWeights;
 	int *d_edgeOffsets;
 	int *d_vertexDegree;
 	int *d_distance;
@@ -19,11 +22,21 @@ namespace bfsGPU {
 	int *d_nextQ;
 	int *d_nextQSize;
 
+	struct sortByWeights {
+		int *distance;
+		__device__
+		sortByWeights(int *distance_): distance(distance_) {}
+		__device__
+		bool operator ()(const int &x, const int &y) const {
+			return distance[x] < distance[y];
+		}
+	};
 
 	void initMemory(Graph &G, int source, std::vector<int> &distanceCheck) {
 
 		//Allocation
 		cudaMalloc(&d_adjList, G.numEdges_m * sizeof(int));
+		cudaMalloc(&d_edgeWeights, G.numEdges_m * sizeof(int));
 		cudaMalloc(&d_edgeOffsets, G.numVertices_m * sizeof(int));
 		cudaMalloc(&d_vertexDegree, G.numVertices_m * sizeof(int));
 		cudaMalloc(&d_distance, G.numVertices_m * sizeof(int));
@@ -32,6 +45,7 @@ namespace bfsGPU {
 		cudaMalloc(&d_nextQSize, sizeof(int));
 		//Data transfer
 		cudaMemcpy(d_adjList, G.adjacencyList_m.data(), G.numEdges_m * sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_edgeWeights, G.edgeWeights_m.data(), G.numEdges_m * sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_edgeOffsets, G.edgeOffsets_m.data(), G.numVertices_m * sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_vertexDegree, G.vertexDegree_m.data(), G.numVertices_m * sizeof(int), cudaMemcpyHostToDevice);
 		//Init kernel parameters
@@ -39,14 +53,15 @@ namespace bfsGPU {
 		cudaMemset(d_nextQSize, 0, sizeof(int));
 		//Init distance
 		distanceCheck.resize(G.numVertices_m);
-		std::fill(distanceCheck.begin(), distanceCheck.end(), -1);
+		std::fill(distanceCheck.begin(), distanceCheck.end(), INT_MAX);
 		distanceCheck[source] = 0;
 		cudaMemcpy(d_distance, distanceCheck.data(), G.numVertices_m * sizeof(int), cudaMemcpyHostToDevice);
 
 	}
 
-	extern "C" {
-	__global__ void parentKernelBfs(int *d_adjList,
+	extern "C"
+	__global__ void parentKernelSssp(int *d_adjList,
+			int *d_edgeWeights,
 			int *d_edgeOffsets,
 			int *d_vertexDegree,
 			int *d_distance,
@@ -55,12 +70,11 @@ namespace bfsGPU {
 			int *d_nextQSize) {
 
 		int currQSize = 1;
-		int dev_depth = 0;
 		int numBlocks;
 		while (currQSize) {
 
 			numBlocks = ((currQSize - 1) / BLOCK_SIZE) + 1;
-			childKernelBfs<<<numBlocks, BLOCK_SIZE>>>(dev_depth, d_adjList, d_edgeOffsets,
+			childKernelSssp<<<numBlocks, BLOCK_SIZE>>>(d_adjList, d_edgeWeights, d_edgeOffsets,
 					d_vertexDegree, d_distance,
 					d_currQ, currQSize, d_nextQ, d_nextQSize);
 
@@ -68,13 +82,14 @@ namespace bfsGPU {
 			currQSize = *d_nextQSize;
 			cudaMemcpyAsync(d_currQ, d_nextQ, sizeof(int) * currQSize, cudaMemcpyDeviceToDevice);
 			cudaMemsetAsync(d_nextQSize, 0, sizeof(int));
-			++dev_depth;
+			//thrust::sort(thrust::device, d_currQ, d_currQ + currQSize, sortByWeights(d_distance));
 
 		}
 	}
 
-	__global__ void childKernelBfs(int depth,
-			int *d_adjList,
+	extern "C"
+	__global__ void childKernelSssp(int *d_adjList,
+			int *d_edgeWeights,
 			int *d_edgeOffsets,
 			int *d_vertexDegree,
 			int *d_distance,
@@ -90,7 +105,7 @@ namespace bfsGPU {
 					__shared__ int s_subNextQ[NUM_SUB_QUEUES][SUB_QUEUE_LEN], s_subNextQSize[NUM_SUB_QUEUES];
 					__shared__ int s_globalOffsets[NUM_SUB_QUEUES];
 					//registers
-					int child, parent,
+					int child, parent, wt,
 					subSharedQIdx /*which row of queue < NUM_SUB_QUEUES */,
 					subSharedQSize/*length of a sub queue to be incremented < SUB_QUEUE_LEN */,
 					globalQIdx /*global level queue idx < |V| */;
@@ -108,9 +123,10 @@ namespace bfsGPU {
 						for (int i=d_edgeOffsets[parent]; i<d_edgeOffsets[parent]+d_vertexDegree[parent]; ++i) {
 
 							child = d_adjList[i];
-							if (atomicMin(&d_distance[child], INT_MAX) == -1) {
-
-								d_distance[child] = depth + 1;
+							wt = d_distance[child];
+							atomicMin(&d_distance[child], d_edgeWeights[i] + d_distance[parent]);
+							//if the node not visited or the key is decreased
+							if (wt == INT_MAX || wt != d_distance[child]) {
 								// Increment sub queue size
 								subSharedQSize = atomicAdd(&s_subNextQSize[subSharedQIdx], 1);
 								if (subSharedQSize < SUB_QUEUE_LEN) {
@@ -139,22 +155,21 @@ namespace bfsGPU {
 								d_nextQ[s_globalOffsets[i] + t] = s_subNextQ[i][t];
 							}
 						}
-					}
-		}
 	}
+}
 
-	double execute(Graph &G, std::vector<int> &distanceCheck, int source) {
+	double execute(Graph &G, std::vector<int> &distance, int source) {
 
 		//initialize data
-		initMemory(G, source, distanceCheck);
+		initMemory(G, source, distance);
 		//execution
 		auto start = std::chrono::high_resolution_clock::now();
-		parentKernelBfs<<<1, 1>>>(d_adjList, d_edgeOffsets, d_vertexDegree, d_distance,
+		parentKernelSssp<<<1, 1>>>(d_adjList, d_edgeWeights, d_edgeOffsets, d_vertexDegree, d_distance,
 								  d_currQ, d_nextQ, d_nextQSize);
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> t = end - start;
 		//fill the distances obtained for comparison
-		cudaMemcpy(distanceCheck.data(), d_distance, G.numVertices_m * sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(distance.data(), d_distance, G.numVertices_m * sizeof(int), cudaMemcpyDeviceToHost);
 		//free device pointers
 		freeMemory();
 
@@ -171,4 +186,5 @@ namespace bfsGPU {
 		cudaFree(d_nextQ);
 		cudaFree(d_nextQSize);
 	}
+
 }

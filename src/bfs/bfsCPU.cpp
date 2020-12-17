@@ -1,6 +1,5 @@
 #include "bfsCPU.hpp"
 #include <queue>
-#include <iostream>
 #include <chrono>
 #include <algorithm>
 
@@ -8,7 +7,7 @@
 namespace bfsCPU {
 	void bfsUtil( int source, Graph &G, std::vector<int> &distance) {
 
-		std::queue< int> queue;
+		std::queue<int> queue;
 		int vertex, child;
 
 		queue.push(source);

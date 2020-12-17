@@ -1,33 +1,35 @@
 /*
- * bfsGPU.cuh
+ * ssspGPU.hpp
  *
- *  Created on: 27-Nov-2020
+ *  Created on: 15-Dec-2020
  *      Author: abhishek
  */
 
-#ifndef BFSGPU_HPP_
-#define BFSGPU_HPP_
+#ifndef SSSPGPU_HPP_
+#define SSSPGPU_HPP_
 #include "../graph.hpp"
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <cuda_device_runtime_api.h>
 #include <device_launch_parameters.h>
 
-namespace bfsGPU {
+namespace ssspGPU {
 	void initMemory(Graph &G, int source, std::vector<int> &distanceCheck);
 
 	extern "C" {
 
-	__global__ void parentKernelBfs(int *d_adjList, int *d_edgeOffsets, int *d_vertexDegree,
+	__global__ void parentKernelSssp(int *d_adjList, int *d_edgeWeights, int *d_edgeOffsets, int *d_vertexDegree,
 			int *d_distance, int *d_currQ, int *d_nextQ, int *d_nextQSize);
 
-	__global__ void childKernelBfs(int depth, int *d_adjList, int *d_edgeOffsets,
+	__global__ void childKernelSssp(int *d_adjList, int *d_edgeWeights, int *d_edgeOffsets,
 			int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
 			int *d_nextQ, int *d_nextQSize);
 
 	}
-	double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
+	double execute(Graph &G, std::vector<int> &distance, int source = 0);
 
 	void freeMemory();
 }
-#endif /* BFSGPU_HPP_ */
+
+
+
+#endif /* SSSPGPU_HPP_ */

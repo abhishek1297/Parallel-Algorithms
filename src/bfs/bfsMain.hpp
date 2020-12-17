@@ -7,7 +7,7 @@
 
 #ifndef BFSMAIN_HPP_
 #define BFSMAIN_HPP_
-#include "graph.hpp"
+#include "../graph.hpp"
 #include "bfsCPU.hpp"
 #include "bfsGPU.hpp"
 #include <iostream>

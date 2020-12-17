@@ -1,0 +1,29 @@
+compare dynamic parallel vs normal parallel version
+ * create diagrams for level sychronization and graph representation
+ * compare the level synchronous approach of the cpu and gpu
+ * what did I improve rather than traditional gpu implementation
+ * atomic operations
+ *
+ * added device parallelism
+ * added hierarchical queues
+ * read from research papers also
+ *
+ *
+ *
+ * provide time complexity as well as clock cycles reduced
+ 
+ 
+ 
+ The reasons why dfs is not optimal:
+ 
+ Dfs is asynchronous.
+ It will search from a single node until all of its children are relaxed.
+ Considering real world graphs the outdegree of each node is not unreasonably large.
+ But unlike BFS which is launches mulitple threads for all the frontier nodes, DFS will never
+ utilize GPU's full capability. Furthermore in DFS, the kernel calls and the number of threads are
+ at the mercy of the outdegree at that node. So it might make few calls with heavier workload(highly unlikely)
+ or more calls with less workload. and given the fact that GPU performance degrades (as diagram)
+ with smaller workload since kernel prologue is a heavy task and should be considered.
+ 
+ Now serial DFS which uses stack provides backtracking. Here no such DS can be used since the node which
+ calls the kernel handles all of its adjacent nodes and coloring itself black.  

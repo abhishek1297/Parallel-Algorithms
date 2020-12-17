@@ -1,0 +1,13 @@
+ * not giving the handicap because thrust requires transfer of data between host and device
+ * Which is comparatively bad since we are iterating over and over
+ * std::sort algorithm intro-sort and its properties outweighs thrust in this particular case.
+ *
+ * also, during the analysis assume that computational time for graphs greater than New york
+ * Cpu does not finish within reasonable times.
+ 
+ 
+ So the parallel algorithm is similar to that of the BFS level synchronous approach
+ However, I do not sort the frontier based on weights as it is not needed
+ This implementation is different from BFS such that it only changes performs addition and
+ decrease key operations on the weights. 
+ 

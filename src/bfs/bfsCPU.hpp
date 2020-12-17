@@ -7,7 +7,7 @@
 
 #ifndef BFSCPU_HPP_
 #define BFSCPU_HPP_
-#include "graph.hpp"
+#include "../graph.hpp"
 namespace bfsCPU {
 	void bfsUtil( int source, Graph &G, std::vector<int> &distance);
 

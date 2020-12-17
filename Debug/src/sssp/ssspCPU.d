@@ -1,4 +1,4 @@
-src/bfs/bfsGPU.o : ../src/bfs/bfsGPU.cu \
+src/sssp/ssspCPU.o : ../src/sssp/ssspCPU.cu \
     /usr/include/stdc-predef.h \
     /usr/include/cuda_runtime.h \
     /usr/include/crt/host_config.h \
@@ -153,7 +153,8 @@ src/bfs/bfsGPU.o : ../src/bfs/bfsGPU.cu \
     /usr/include/texture_indirect_functions.h \
     /usr/include/surface_indirect_functions.h \
     /usr/include/device_launch_parameters.h \
-    ../src/bfs/graph.hpp \
+    ../src/sssp/ssspCPU.hpp \
+    ../src/sssp/../graph.hpp \
     /usr/include/c++/8/vector \
     /usr/include/c++/8/bits/stl_algobase.h \
     /usr/include/c++/8/bits/functexcept.h \
@@ -251,10 +252,17 @@ src/bfs/bfsGPU.o : ../src/bfs/bfsGPU.cu \
     /usr/include/c++/8/bits/ostream.tcc \
     /usr/include/c++/8/istream \
     /usr/include/c++/8/bits/istream.tcc \
-    ../src/bfs/bfsGPU.hpp \
-    /usr/include/cuda.h \
+    /usr/include/c++/8/climits \
     /usr/include/c++/8/chrono \
     /usr/include/c++/8/ratio \
     /usr/include/c++/8/limits \
     /usr/include/c++/8/ctime \
-    /usr/include/c++/8/bits/parse_numbers.h
+    /usr/include/c++/8/bits/parse_numbers.h \
+    /usr/include/c++/8/algorithm \
+    /usr/include/c++/8/utility \
+    /usr/include/c++/8/bits/stl_relops.h \
+    /usr/include/c++/8/bits/stl_algo.h \
+    /usr/include/c++/8/bits/algorithmfwd.h \
+    /usr/include/c++/8/bits/stl_heap.h \
+    /usr/include/c++/8/bits/stl_tempbuf.h \
+    /usr/include/c++/8/bits/uniform_int_dist.h

@@ -9,17 +9,16 @@
  */
 
 #include "bfsMain.hpp"
-#include<random>
+#include <random>
 
 
 int bfsMain () {
 
-	const std::string datasetDir{"/home/abhishek/Downloads/graph datasets/"};
-	std::vector<std::string> files{"test.txt", "roadNet-CA.txt", "p2p-Gnutella31.txt",
-								   "youtube.txt", "live-journal.txt"};
+	std::string datasetDir{"/home/abhishek/Downloads/graph datasets/"};
+	std::string files[]{"test.txt", "youtube.txt"};
 	std::vector<int> distanceCPU, distanceGPU;
-	bool convertToZeroIdx {false};
-	Graph G(datasetDir + files[4], convertToZeroIdx);
+	bool convertToZeroIdx {true};
+	Graph G(datasetDir + files[1], 2, {0, 1}, convertToZeroIdx, "bfs");
 	double cpu, gpu;
 	std::cout << G << std::endl;
 	std::cout << "CPU Time: " << (cpu = bfsCPU::execute(G, distanceCPU, 0)) << " ms" << std::endl;
