@@ -75,6 +75,7 @@ void Graph::loadGraphFile(adjlist_edge_wt &adjList,
 			for (int i=0; i<nV; ++i, adjList.push_back(std::vector<std::pair<int, int>>()));
 		}
 		catch(std::exception &e) {
+			std::cout << "nV error" << std::endl;
 			std::cout << e.what();
 		}
 
@@ -105,7 +106,7 @@ void Graph::loadGraphFile(adjlist_edge_wt &adjList,
 
 
 		std::string line;
-		std::string token[numInputs]{"-1"};
+		std::vector<std::string> token(4);
 
 		while(std::getline(ifs, line)) {
 

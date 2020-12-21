@@ -6,8 +6,8 @@
  * Cpu does not finish within reasonable times.
  
  
+ 
  So the parallel algorithm is similar to that of the BFS level synchronous approach
  However, I do not sort the frontier based on weights as it is not needed
  This implementation is different from BFS such that it only changes performs addition and
- decrease key operations on the weights. 
- 
+ decrease key operations on the weights.

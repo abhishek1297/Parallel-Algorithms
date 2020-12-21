@@ -5,7 +5,7 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 CU_SRCS += \
 ../src/bfs/bfsGPU.cu \
-../src/bfs/bfsMain.cu 
+../src/bfs/main.cu 
 
 CPP_SRCS += \
 ../src/bfs/bfsCPU.cpp 
@@ -13,11 +13,11 @@ CPP_SRCS += \
 OBJS += \
 ./src/bfs/bfsCPU.o \
 ./src/bfs/bfsGPU.o \
-./src/bfs/bfsMain.o 
+./src/bfs/main.o 
 
 CU_DEPS += \
 ./src/bfs/bfsGPU.d \
-./src/bfs/bfsMain.d 
+./src/bfs/main.d 
 
 CPP_DEPS += \
 ./src/bfs/bfsCPU.d 

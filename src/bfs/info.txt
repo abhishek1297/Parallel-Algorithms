@@ -13,6 +13,14 @@ compare dynamic parallel vs normal parallel version
  * provide time complexity as well as clock cycles reduced
  
  
+ The reason why the performance is slower when you directly use warp level queues
+ all threads will go through if else statements in the for loop of the kernel
+ if all the small level queues become full the else condition takes place
+ Now threads may take different paths so it is not necessary that all the threads running will
+ perform memory coalescing on the data some may be filling their respective queues while others
+ writing data to the global memory. The idea is to use another block level queue such that 
+ when warp level becomes full then add it to the block level.
+ 
  
  The reasons why dfs is not optimal:
  

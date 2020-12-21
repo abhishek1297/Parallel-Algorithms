@@ -16,17 +16,32 @@
 namespace bfsGPU {
 	void initMemory(Graph &G, int source, std::vector<int> &distanceCheck);
 
-	extern "C" {
+	namespace hierarchical {
+		extern "C" __global__ void parentKernel(int *d_adjList, int *d_edgeOffsets, int *d_vertexDegree,
+				int *d_distance, int *d_currQ, int *d_nextQ, int *d_nextQSize);
 
-	__global__ void parentKernelBfs(int *d_adjList, int *d_edgeOffsets, int *d_vertexDegree,
-			int *d_distance, int *d_currQ, int *d_nextQ, int *d_nextQSize);
-
-	__global__ void childKernelBfs(int depth, int *d_adjList, int *d_edgeOffsets,
-			int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
-			int *d_nextQ, int *d_nextQSize);
+		extern "C" __global__ void childKernel(int depth, int *d_adjList, int *d_edgeOffsets,
+				int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
+				int *d_nextQ, int *d_nextQSize);
+		extern "C" __global__ void childKernelWarpSync(int depth, int *d_adjList, int *d_edgeOffsets,
+						int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
+						int *d_nextQ, int *d_nextQSize);
+		double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
 
 	}
-	double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
+	namespace blocked {
+		extern "C" __global__ void kernelB(int depth, int *d_adjList, int *d_edgeOffsets,
+						int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
+						int *d_nextQ, int *d_nextQSize);
+		double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
+
+	}
+	namespace naive {
+		extern "C" __global__ void kernelN(int depth, int *d_adjList, int *d_edgeOffsets,
+				int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
+				int *d_nextQ, int *d_nextQSize);
+		double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
+	}
 
 	void freeMemory();
 }

@@ -1,15 +1,12 @@
 #include "ssspGPU.hpp"
 #include <chrono>
 #include <climits>
-#include <thrust/sort.h>
 
 namespace ssspGPU {
 
 	const int BLOCK_SIZE = 1024;
-//	const int BLOCK_QUEUE_SIZE = 128;
 	const int SUB_QUEUE_LEN = 32;
 	const int NUM_SUB_QUEUES = 4;
-//	const int CORES_PER_SM = 128; //CUDA cores per SM
 
 	//device pointers
 	int *d_adjList;
@@ -151,7 +148,7 @@ namespace ssspGPU {
 					for (int t=threadIdx.x; t<SUB_QUEUE_LEN; t+=blockDim.x) {
 
 						for (int i=0; i<NUM_SUB_QUEUES; ++i) {
-							if (s_subNextQSize[i] != 0) {
+							if (t < s_subNextQSize[i]) {
 								d_nextQ[s_globalOffsets[i] + t] = s_subNextQ[i][t];
 							}
 						}
@@ -166,6 +163,7 @@ namespace ssspGPU {
 		auto start = std::chrono::high_resolution_clock::now();
 		parentKernelSssp<<<1, 1>>>(d_adjList, d_edgeWeights, d_edgeOffsets, d_vertexDegree, d_distance,
 								  d_currQ, d_nextQ, d_nextQSize);
+		cudaDeviceSynchronize();
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> t = end - start;
 		//fill the distances obtained for comparison

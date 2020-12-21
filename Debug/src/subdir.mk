@@ -7,9 +7,11 @@ CU_SRCS += \
 ../src/main.cu 
 
 CPP_SRCS += \
+../src/dataIO.cpp \
 ../src/graph.cpp 
 
 OBJS += \
+./src/dataIO.o \
 ./src/graph.o \
 ./src/main.o 
 
@@ -17,6 +19,7 @@ CU_DEPS += \
 ./src/main.d 
 
 CPP_DEPS += \
+./src/dataIO.d \
 ./src/graph.d 
 
 
