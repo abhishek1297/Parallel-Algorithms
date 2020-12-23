@@ -1,7 +1,7 @@
 compare dynamic parallel vs normal parallel version
  * create diagrams for level sychronization and graph representation
  * compare the level synchronous approach of the cpu and gpu
- * what did I improve rather than traditional gpu implementation
+ * what did I improve rather than traditional Gpu implementation
  * atomic operations
  *
  * added device parallelism
@@ -13,14 +13,26 @@ compare dynamic parallel vs normal parallel version
  * provide time complexity as well as clock cycles reduced
  
  
- The reason why the performance is slower when you directly use warp level queues
- all threads will go through if else statements in the for loop of the kernel
- if all the small level queues become full the else condition takes place
- Now threads may take different paths so it is not necessary that all the threads running will
- perform memory coalescing on the data some may be filling their respective queues while others
- writing data to the global memory. The idea is to use another block level queue such that 
- when warp level becomes full then add it to the block level.
+ The reason why the performance is slower when you directly use warp level queues in my case
+ The warp level queues will reduce the number of collisions by a factor of #queues since each thread
+ will have its respective sub queue mapped according to its index. In the naive approach, the while filling the
+ next queue all the threads follow the same path with less number of divergence due to conditions whereas in hierarchical/blocked queue
+ approach threads diverge and take different paths thus leading reduction in performance.
+ This is probably because of the density and outdegree of the graph. In this project, I have only worked with
+ real-world graphs which are not sparse. 
+ Although I improved coalescing implementation by iterating over all of the queues
+ in a single loop by manipulating addresses but it seems the calculations and conditional divergence resists the
+ performance to be increased by a large factor.
  
+ 
+ 
+ Hierarchical Queue Management:
+ As suggested in the paper [x] We can avoid the collisions at the global level as well as the block level by
+ adding a new level of queue at the warp level. The author of the paper suggests us to three queues but in
+ my implementation I have only used two since both warp level and block level queues reside in the shared memory.
+ Copying data from warp queue to the block queue seems unresonable because of copying the data at the same level
+ before it is copied to the global memory.
+
  
  The reasons why dfs is not optimal:
  

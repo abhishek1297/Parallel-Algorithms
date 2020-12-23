@@ -5,8 +5,8 @@
 namespace ssspGPU {
 
 	const int BLOCK_SIZE = 1024;
-	const int SUB_QUEUE_LEN = 32;
-	const int NUM_SUB_QUEUES = 4;
+	const int SUB_QUEUE_SIZE = 4;
+	const int NUM_SUB_QUEUES = 32;
 
 	//device pointers
 	int *d_adjList;
@@ -99,12 +99,12 @@ namespace ssspGPU {
 				 * d_variable is device allocated variables
 				 * s_variable is shared memory variable
 				 */
-					__shared__ int s_subNextQ[NUM_SUB_QUEUES][SUB_QUEUE_LEN], s_subNextQSize[NUM_SUB_QUEUES];
+					__shared__ int s_subNextQ[NUM_SUB_QUEUES][SUB_QUEUE_SIZE], s_subNextQSize[NUM_SUB_QUEUES];
 					__shared__ int s_globalOffsets[NUM_SUB_QUEUES];
 					//registers
 					int child, parent, wt,
 					subSharedQIdx /*which row of queue < NUM_SUB_QUEUES */,
-					subSharedQSize/*length of a sub queue to be incremented < SUB_QUEUE_LEN */,
+					subSharedQSize/*length of a sub queue to be incremented < SUB_QUEUE_SIZE */,
 					globalQIdx /*global level queue idx < |V| */;
 					//obtain thread id
 					int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -126,13 +126,13 @@ namespace ssspGPU {
 							if (wt == INT_MAX || wt != d_distance[child]) {
 								// Increment sub queue size
 								subSharedQSize = atomicAdd(&s_subNextQSize[subSharedQIdx], 1);
-								if (subSharedQSize < SUB_QUEUE_LEN) {
+								if (subSharedQSize < SUB_QUEUE_SIZE) {
 
 									s_subNextQ[subSharedQIdx][subSharedQSize] = child;
 								}
 								else {
 
-									s_subNextQSize[subSharedQIdx] = SUB_QUEUE_LEN;
+									s_subNextQSize[subSharedQIdx] = SUB_QUEUE_SIZE;
 									globalQIdx = atomicAdd(d_nextQSize, 1);
 									d_nextQ[globalQIdx] = child;
 								}
@@ -145,15 +145,17 @@ namespace ssspGPU {
 						s_globalOffsets[threadIdx.x] = atomicAdd(d_nextQSize, s_subNextQSize[threadIdx.x]);
 					__syncthreads();
 
-					for (int t=threadIdx.x; t<SUB_QUEUE_LEN; t+=blockDim.x) {
+					for (int t=threadIdx.x; t<NUM_SUB_QUEUES*SUB_QUEUE_SIZE; t+=blockDim.x) {
 
-						for (int i=0; i<NUM_SUB_QUEUES; ++i) {
-							if (t < s_subNextQSize[i]) {
-								d_nextQ[s_globalOffsets[i] + t] = s_subNextQ[i][t];
-							}
-						}
+						//row-major ordering lucky i guess
+						const int row = t / SUB_QUEUE_SIZE;
+						if (s_subNextQSize[row] == 0) continue;
+						const int col = t % SUB_QUEUE_SIZE;
+						int lim = (SUB_QUEUE_SIZE * row) + s_subNextQSize[row];
+						if (t < lim)
+							d_nextQ[s_globalOffsets[row] + col] = s_subNextQ[row][col];
+					}
 	}
-}
 
 	double execute(Graph &G, std::vector<int> &distance, int source) {
 

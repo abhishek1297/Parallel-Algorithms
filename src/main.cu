@@ -10,9 +10,11 @@
  */
 #include "dataIO.hpp"
 #include "bfs/main.hpp"
-//#include "sssp/main.hpp"
+#include "sssp/main.hpp"
 
 /**
+ * Inputs to graph constructor defined in dataIO.cpp
+ * Make sure to use weighted graphs for the SSSP.
 
     {true, 4, {1, 2, 3}, dir +"test.txt"},// 0
     {false, 2, {0, 1}, dir + "live-journal.txt"}, // 1
@@ -27,7 +29,7 @@
 
 int main() {
 	const struct DatasetInfo &inp = F[8];
-	Graph G(inp.fname, inp.numInputs, inp.indexToRead, inp.toZeroIdx, "bfs");
+	Graph G(inp.fname, inp.numInputs, inp.indexToRead, inp.toZeroIdx, "sssp");
 	std::cout << G << std::endl;
-	return bfsMain(std::move(G));
+	return ssspMain(std::move(G));
 }

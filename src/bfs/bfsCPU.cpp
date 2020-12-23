@@ -1,11 +1,20 @@
 #include "bfsCPU.hpp"
 #include <queue>
 #include <chrono>
-#include <algorithm>
-
 
 namespace bfsCPU {
-	void bfsUtil( int source, Graph &G, std::vector<int> &distance) {
+
+	/**
+	 * Executing the Breadth-First search on the CPU
+	 *
+	 * Parameters
+	 * G: A Graph object
+	 * distanceCheck: list of distances calculated to verify later
+	 * source: source index (zero based). deafult is zero.
+	 */
+	double execute(Graph &G, std::vector<int> &distanceCheck, int source) {
+
+		std::vector<int> distance(G.numVertices_m, -1);//distance from source
 
 		std::queue<int> queue;
 		int vertex, child;
@@ -13,6 +22,7 @@ namespace bfsCPU {
 		queue.push(source);
 		distance[source] = 0;
 
+		auto start = std::chrono::high_resolution_clock::now();
 		while(!queue.empty()) {
 
 			vertex = queue.front();
@@ -29,16 +39,7 @@ namespace bfsCPU {
 				}
 			}
 		}
-	}
-
-	double execute(Graph &G, std::vector<int> &distanceCheck, int source) {
-
-		std::vector<int> distance(G.numVertices_m, -1);//distance from source
-		auto start = std::chrono::high_resolution_clock::now();
-
-		bfsUtil(source, G, distance);
 		auto end = std::chrono::high_resolution_clock::now();
-
 		std::chrono::duration<double, std::milli> t = end - start;
 		distanceCheck = std::move(distance);
 		return t.count();

@@ -1,10 +1,3 @@
-/*
- * ssspGPU.hpp
- *
- *  Created on: 15-Dec-2020
- *      Author: abhishek
- */
-
 #ifndef SSSPGPU_HPP_
 #define SSSPGPU_HPP_
 #include "../graph.hpp"

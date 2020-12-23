@@ -1,5 +1,4 @@
 #include "graph.hpp"
-#include <ctime>
 #include <fstream>
 #include <sstream>
 #include <functional>
@@ -7,13 +6,26 @@
 #include <iostream>
 #include <algorithm>
 
+
+/**
+ * This constructor will generate a Adjacency list graph representation
+ * for the given input file passed.
+ *
+ * Parameters:
+ * path: absolute path of the input file
+ * numInputs: Total number of inputs that needs to be read on each line of the file
+ * indexToRead: a list indices(zero based) of each token needed {from, to, weight}
+ * convertToZeroIdx: convert to zero based index if the vertex value starts with one
+ * mode: bfs or sssp
+ */
+
 Graph::Graph(const std::string &path,
 		const int &numInputs,
 		const std::vector<int> &indexToRead,
 		bool convertToZeroIdx,
 		const std::string &mode) :pathData_m(path){
 
-	adjlist_edge_wt adjList;
+	adjlist_vec adjList;
 	loadGraphFile(adjList, numInputs, indexToRead, convertToZeroIdx);
 	int nV{static_cast<int>(adjList.size())};
 	edgeOffsets_m.resize(nV);
@@ -50,16 +62,8 @@ Graph::Graph(const std::string &path,
 	 numEdges_m = adjacencyList_m.size();
 
 }
-/**
- * loading adjacency list from the dataset file.
- *
- * Here based on the type csv, tsv I am loading the adjacency list
- * The dataset used may have different number of inputs at each line (2-4)
- * You need to provide 3 indices to identify which tokens to read (from node, to node, weights) respectively.
- *
- *
- */
-void Graph::loadGraphFile(adjlist_edge_wt &adjList,
+
+void Graph::loadGraphFile(adjlist_vec &adjList,
 		const int &numInputs,
 		const std::vector<int> &indexToRead,
 		bool convertToZeroIdx) {

@@ -1,14 +1,12 @@
 #include "bfsGPU.hpp"
-//#include <thrust/extrema.h>
-//#include <thrust/reduce.h>
 #include <chrono>
 
 namespace bfsGPU {
 
 	const int BLOCK_SIZE = 1024;
 	const int BLOCK_QUEUE_SIZE = 128;
-	const int SUB_QUEUE_LEN = 32;
-	const int NUM_SUB_QUEUES = 4;
+	const int SUB_QUEUE_SIZE = 4;
+	const int NUM_SUB_QUEUES = 32;
 
 	//device pointers
 	int *d_adjList;
@@ -46,6 +44,10 @@ namespace bfsGPU {
 
 	}
 
+	/**
+	 * The parent kernel is similar to launching the kernel from the cpu.
+	 * But in this case launching the workload from the gpu itself to save some time.
+	 */
 	extern "C"
 	__global__ void hierarchical::parentKernel(int *d_adjList,
 			int *d_edgeOffsets,
@@ -74,6 +76,10 @@ namespace bfsGPU {
 	}
 
 
+	/**
+	 * The child kernel which performs the main operation of traversal over the graph.
+	 */
+
 	extern "C"
 	__global__ void hierarchical::childKernel(int depth,
 			int *d_adjList,
@@ -89,12 +95,12 @@ namespace bfsGPU {
 				 * d_variable is device allocated variable
 				 * s_variable is shared memory variable
 				 */
-					__shared__ int s_subNextQ[NUM_SUB_QUEUES][SUB_QUEUE_LEN], s_subNextQSize[NUM_SUB_QUEUES];
+					__shared__ int s_subNextQ[NUM_SUB_QUEUES][SUB_QUEUE_SIZE], s_subNextQSize[NUM_SUB_QUEUES];
 					__shared__ int s_globalOffsets[NUM_SUB_QUEUES];
 					//registers
 					int child, parent,
 					subSharedQIdx /*which row of queue < NUM_SUB_QUEUES */,
-					subSharedQSize/*length of a sub queue to be incremented < SUB_QUEUE_LEN */,
+					subSharedQSize/*length of a sub queue to be incremented < SUB_QUEUE_SIZE */,
 					globalQIdx /*global level queue idx < |V| */;
 					//obtain thread id
 					int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -107,21 +113,22 @@ namespace bfsGPU {
 						parent = d_currQ[tIdx];//get current values in parallel
 						subSharedQIdx = tIdx & (NUM_SUB_QUEUES - 1);
 
+						//expand all children
 						for (int i=d_edgeOffsets[parent]; i<d_edgeOffsets[parent]+d_vertexDegree[parent]; ++i) {
 
 							child = d_adjList[i];
-							if (atomicMin(&d_distance[child], INT_MAX) == -1) {
+							if (atomicMin(&d_distance[child], INT_MAX) == -1) { // if not found
 
 								d_distance[child] = depth;
 								// Increment sub queue size
 								subSharedQSize = atomicAdd(&s_subNextQSize[subSharedQIdx], 1);
-								if (subSharedQSize < SUB_QUEUE_LEN) {
+								if (subSharedQSize < SUB_QUEUE_SIZE) {
 									s_subNextQ[subSharedQIdx][subSharedQSize] = child;
 
 								}
 								else {
 
-									s_subNextQSize[subSharedQIdx] = SUB_QUEUE_LEN;
+									s_subNextQSize[subSharedQIdx] = SUB_QUEUE_SIZE;
 									globalQIdx = atomicAdd(d_nextQSize, 1);
 									d_nextQ[globalQIdx] = child;
 								}
@@ -134,13 +141,25 @@ namespace bfsGPU {
 							s_globalOffsets[threadIdx.x] = atomicAdd(d_nextQSize, s_subNextQSize[threadIdx.x]);
 						__syncthreads();
 
-					for (int t=threadIdx.x; t<SUB_QUEUE_LEN; t+=blockDim.x) {
+					/*for (int t=threadIdx.x; t<SUB_QUEUE_SIZE; t+=blockDim.x) {
 
 							for (int i=0; i<NUM_SUB_QUEUES; ++i) {
 								if (t < s_subNextQSize[i]) {
 									d_nextQ[s_globalOffsets[i] + t] = s_subNextQ[i][t];
 								}
 							}
+					}*/
+
+
+					for (int t=threadIdx.x; t<NUM_SUB_QUEUES*SUB_QUEUE_SIZE; t+=blockDim.x) {
+
+						//row-major ordering lucky i guess
+						const int row = t / SUB_QUEUE_SIZE;
+						if (s_subNextQSize[row] == 0) continue;
+						const int col = t % SUB_QUEUE_SIZE;
+						int lim = (SUB_QUEUE_SIZE * row) + s_subNextQSize[row];
+						if (t < lim)
+							d_nextQ[s_globalOffsets[row] + col] = s_subNextQ[row][col];
 					}
 		}
 
@@ -164,7 +183,6 @@ namespace bfsGPU {
 	}
 
 
-
 	extern "C"
 	__global__ void blocked::kernelB(int depth, int *d_adjList, int *d_edgeOffsets,
 				int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
@@ -175,7 +193,7 @@ namespace bfsGPU {
 			 * s_variable is shared memory variable
 			 */
 			__shared__ int s_nextQ[BLOCK_QUEUE_SIZE];
-			__shared__ int s_nextQSize, s_blockGlobalQIdx;
+			__shared__ int s_nextQSize, s_globalOffset;
 
 			//obtain thread id
 			int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -211,11 +229,11 @@ namespace bfsGPU {
 			__syncthreads();
 
 			if (threadIdx.x == 0) //offset for global memory
-				s_blockGlobalQIdx = atomicAdd(d_nextQSize, s_nextQSize);
+				s_globalOffset = atomicAdd(d_nextQSize, s_nextQSize);
 			__syncthreads();
 
 			for (int i=threadIdx.x; i<s_nextQSize; i+=blockDim.x) {// fill the global memory
-				d_nextQ[s_blockGlobalQIdx + i] = s_nextQ[i];
+				d_nextQ[s_globalOffset + i] = s_nextQ[i];
 			}
 		}
 

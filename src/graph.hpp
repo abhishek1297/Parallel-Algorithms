@@ -1,19 +1,10 @@
-/*
- * graph.hpp
- *
- *  Created on: 26-Nov-2020
- *      Author: abhishek
- */
-
 #ifndef GRAPH_HPP_
 #define GRAPH_HPP_
 #include <vector>
 #include <string>
 #include <iostream>
 
-using adjlist_edge_wt =  std::vector<std::vector<std::pair<int, int>>>;
-
-class EdgeException {};
+using adjlist_vec =  std::vector<std::vector<std::pair<int, int>>>;
 
 //Adjacency list representation of a Undirected Graph.
 class Graph {
@@ -32,7 +23,7 @@ class Graph {
 
  	friend std::ostream& operator <<(std::ostream &out, Graph &G);
 	private:
- 	void loadGraphFile(adjlist_edge_wt &adjList, const int &numInputs, const std::vector<int> &indexToRead, bool convertToZeroIdx);
+ 	void loadGraphFile(adjlist_vec &adjList, const int &numInputs, const std::vector<int> &indexToRead, bool convertToZeroIdx);
 };
 
 #endif /* GRAPH_HPP_ */
