@@ -8,6 +8,10 @@ When it comes to Graph, It is one of the most important data structures which ca
 This project depicts the use of GPGPU to help improve the performance of the Pathfinding algorithms, Breadth-First Search and Single-Source Shortest Path specifically. I will present GPU implementations of these algorithms along with different approaches taken. Experimental results show that up to X times speedup is achieved over its CPU counterpart.	
 
 
+# Graph Representation
+A graph G(V,E)can be represented as an Adjacency Matrix as well as an Adjacency List. Here, I have used an adjacency list due to their efficient use of space O(V+E).  This list  A can be stored contiguously such that there should be two more arrays,  Ewhich holds all the offsets, and, Owhich holds the outdegree for a vertex v which means A[v]to A[v+O[v]]holds all the children. There can be an additional weighted array W  which is stored contiguously as well.  
+**(Image representation)
+
 ## Welcome to GitHub Pages
 
 You can use the [editor on GitHub](https://github.com/abhishek1297/Parallel-Algorithms/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
