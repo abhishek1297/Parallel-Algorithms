@@ -1,6 +1,15 @@
 #include "bfsGPU.hpp"
 #include <chrono>
-
+#include <cstdio>
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
 namespace bfsGPU {
 
 	const int BLOCK_SIZE = 1024;
@@ -17,6 +26,7 @@ namespace bfsGPU {
 	int *d_currQ;
 	int *d_nextQ;
 	int *d_nextQSize;
+//	texture<int, cudaTextureType1D, cudaReadModeElementType> tex_edgeOffsets;
 
 
 	void initMemory(Graph &G, int source, std::vector<int> &distanceCheck) {
@@ -41,7 +51,9 @@ namespace bfsGPU {
 		std::fill(distanceCheck.begin(), distanceCheck.end(), -1);
 		distanceCheck[source] = 0;
 		cudaMemcpy(d_distance, distanceCheck.data(), G.numVertices_m * sizeof(int), cudaMemcpyHostToDevice);
-
+		//texture reference assigned to the edge offsets
+//		size_t offset{0};
+//		cudaBindTexture(&offset, tex_edgeOffsets, d_edgeOffsets, G.numVertices_m * sizeof(int));
 	}
 
 	/**
@@ -58,20 +70,23 @@ namespace bfsGPU {
 			int *d_nextQSize) {
 
 		int currQSize = 1;
-		int dev_depth = 0;
+		int depth = 0;
 		int numBlocks;
 		while (currQSize) {
 
 			numBlocks = ((currQSize - 1) / BLOCK_SIZE) + 1;
-			childKernel<<<numBlocks, BLOCK_SIZE>>>(++dev_depth, d_adjList, d_edgeOffsets,
+			childKernel<<<numBlocks, BLOCK_SIZE>>>(++depth, d_adjList, d_edgeOffsets,
 					d_vertexDegree, d_distance,
 					d_currQ, currQSize, d_nextQ, d_nextQSize);
 
 			cudaDeviceSynchronize(); // halt gpu
 			currQSize = *d_nextQSize;
-			cudaMemcpyAsync(d_currQ, d_nextQ, sizeof(int) * currQSize, cudaMemcpyDeviceToDevice);
+//			*d_nextQSize = 0;
+//			int *temp = d_nextQ;
+//			d_nextQ = d_currQ;
+//			d_currQ = temp;
 			cudaMemsetAsync(d_nextQSize, 0, sizeof(int));
-
+			cudaMemcpyAsync(d_currQ, d_nextQ, currQSize * sizeof(int), cudaMemcpyDeviceToDevice);
 		}
 	}
 
@@ -163,7 +178,7 @@ namespace bfsGPU {
 					}
 		}
 
-	double hierarchical::execute(Graph &G, std::vector<int> &distanceCheck, int source) {
+	double hierarchical::executeDP(Graph &G, std::vector<int> &distanceCheck, int source) {
 
 		//initialize data
 		initMemory(G, source, distanceCheck);
@@ -182,6 +197,34 @@ namespace bfsGPU {
 		return t.count();
 	}
 
+	double hierarchical::execute(Graph &G, std::vector<int> &distanceCheck, int source) {
+
+		//initialize data
+		initMemory(G, source, distanceCheck);
+		int currQSize{1};
+		int depth{0}, numBlocks;
+		//execution
+		auto start = std::chrono::high_resolution_clock::now();
+		while (currQSize) {
+			numBlocks = ((currQSize - 1) / BLOCK_SIZE) + 1;
+				childKernel<<<numBlocks, BLOCK_SIZE>>>(++depth, d_adjList, d_edgeOffsets,
+						d_vertexDegree, d_distance,
+						d_currQ, currQSize, d_nextQ, d_nextQSize);
+
+				cudaDeviceSynchronize(); // halt gpu
+				cudaMemcpyAsync(&currQSize, d_nextQSize, sizeof(int), cudaMemcpyDeviceToHost);
+				cudaMemcpyAsync(d_currQ, d_nextQ, sizeof(int) * currQSize, cudaMemcpyDeviceToDevice);
+				cudaMemsetAsync(d_nextQSize, 0, sizeof(int));
+		}
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> t = end - start;
+		//fill the distances obtained for comparison
+		cudaMemcpy(distanceCheck.data(), d_distance, G.numVertices_m * sizeof(int), cudaMemcpyDeviceToHost);
+		//free device pointers
+		freeMemory();
+
+		return t.count();
+	}
 
 	extern "C"
 	__global__ void blocked::kernelB(int depth, int *d_adjList, int *d_edgeOffsets,
@@ -324,5 +367,42 @@ namespace bfsGPU {
 		cudaFree(d_currQ);
 		cudaFree(d_nextQ);
 		cudaFree(d_nextQSize);
+//		cudaUnbindTexture(tex_edgeOffsets);
 	}
+
 }
+
+
+/**
+ * 	extern "C" __global__ void kernelTex(int *d_edgeOffsets) {
+
+		int x = threadIdx.x;
+
+		printf("\ntid(%d) = %d %d", x, tex1Dfetch(tex_edgeOffsets, x * 5), d_edgeOffsets[x * 5]);
+	}
+
+	double executeTex(Graph &G, std::vector<int> &distanceCheck, int source) {
+		//assigning edge offsets to texture memory
+//		size_t offset;
+//		int arr[10] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+////		tex_edgeOffsets.addressMode[0] = cudaAddressModeWrap;
+////		tex_edgeOffsets.filterMode = cudaFilterModeLinear;
+////		tex_edgeOffsets.normalized = true;
+//		// Bind the array to the texture
+//		int *dev_ptr;
+//		cudaChannelFormatDesc desc = cudaCreateChannelDesc<int>();
+//		gpuErrchk(cudaMalloc(&dev_ptr, 10 * sizeof(int)));
+//		gpuErrchk(cudaMemcpy(dev_ptr, arr, sizeof(int) * 10, cudaMemcpyHostToDevice));
+//
+//		gpuErrchk(cudaBindTexture(&offset, tex_edgeOffsets, dev_ptr, 10 * sizeof(int)));
+////		gpuErrchk(cudaBindTextureToArray(tex_edgeOffsets, dev_ptr, desc));
+
+		initMemory(G, source, distanceCheck);
+		kernelTex<<<1, 10>>>(d_edgeOffsets);
+		cudaDeviceSynchronize();
+		freeMemory();
+//		cudaUnbindTexture(tex_edgeOffsets);
+//		cudaFree(dev_ptr);
+//		printf("%s", cudaGetErrorString(cudaGetLastError()));
+	}
+ */

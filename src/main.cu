@@ -28,8 +28,9 @@
 */
 
 int main() {
-	const struct DatasetInfo &inp = F[8];
-	Graph G(inp.fname, inp.numInputs, inp.indexToRead, inp.toZeroIdx, "sssp");
+	const struct DatasetInfo &inp = F[1];
+	Graph G(inp.fname, inp.numInputs, inp.indexToRead, inp.toZeroIdx, "bfs");
 	std::cout << G << std::endl;
-	return ssspMain(std::move(G));
+	return bfsMain(std::move(G));
+//	return ssspMain(std::move(G));
 }

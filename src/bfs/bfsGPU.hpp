@@ -14,6 +14,7 @@ namespace bfsGPU {
 		extern "C" __global__ void childKernel(int depth, int *d_adjList, int *d_edgeOffsets,
 				int *d_vertexDegree, int *d_distance, int *d_currQ, int currQSize,
 				int *d_nextQ, int *d_nextQSize);
+		double executeDP(Graph &G, std::vector<int> &distanceCheck, int source = 0);
 		double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
 	}
 	namespace blocked {
@@ -30,5 +31,8 @@ namespace bfsGPU {
 		double execute(Graph &G, std::vector<int> &distanceCheck, int source = 0);
 	}
 	void freeMemory();
+
+	extern "C" __global__ void kernelTex(int *d_edgeOffsets);
+	double executeTex(Graph &G, std::vector<int> &distanceCheck, int source = 0);
 }
 #endif /* BFSGPU_HPP_ */
