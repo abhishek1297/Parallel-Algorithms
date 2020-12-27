@@ -56,33 +56,6 @@ namespace ssspGPU {
 
 	}
 
-	extern "C"
-	__global__ void parentKernelSssp(int *d_adjList,
-			int *d_edgeWeights,
-			int *d_edgeOffsets,
-			int *d_vertexDegree,
-			int *d_distance,
-			int *d_currQ,
-			int *d_nextQ,
-			int *d_nextQSize) {
-
-		int currQSize = 1;
-		int numBlocks;
-		while (currQSize) {
-
-			numBlocks = ((currQSize - 1) / BLOCK_SIZE) + 1;
-			childKernelSssp<<<numBlocks, BLOCK_SIZE>>>(d_adjList, d_edgeWeights, d_edgeOffsets,
-					d_vertexDegree, d_distance,
-					d_currQ, currQSize, d_nextQ, d_nextQSize);
-
-			cudaDeviceSynchronize(); // halt gpu
-			currQSize = *d_nextQSize;
-			cudaMemcpyAsync(d_currQ, d_nextQ, sizeof(int) * currQSize, cudaMemcpyDeviceToDevice);
-			cudaMemsetAsync(d_nextQSize, 0, sizeof(int));
-			//thrust::sort(thrust::device, d_currQ, d_currQ + currQSize, sortByWeights(d_distance));
-
-		}
-	}
 
 	extern "C"
 	__global__ void childKernelSssp(int *d_adjList,
@@ -162,10 +135,21 @@ namespace ssspGPU {
 		//initialize data
 		initMemory(G, source, distance);
 		//execution
+		int currQSize {1};
 		auto start = std::chrono::high_resolution_clock::now();
-		parentKernelSssp<<<1, 1>>>(d_adjList, d_edgeWeights, d_edgeOffsets, d_vertexDegree, d_distance,
-								  d_currQ, d_nextQ, d_nextQSize);
-		cudaDeviceSynchronize();
+		while (currQSize) {
+
+				int numBlocks = ((currQSize - 1) / BLOCK_SIZE) + 1;
+				childKernelSssp<<<numBlocks, BLOCK_SIZE>>>(d_adjList, d_edgeWeights, d_edgeOffsets,
+						d_vertexDegree, d_distance,
+						d_currQ, currQSize, d_nextQ, d_nextQSize);
+
+				cudaDeviceSynchronize(); // halt gpu
+				cudaMemcpyAsync(&currQSize, d_nextQSize, sizeof(int), cudaMemcpyDeviceToHost);
+				cudaMemcpyAsync(d_currQ, d_nextQ, sizeof(int) * currQSize, cudaMemcpyDeviceToDevice);
+				cudaMemsetAsync(d_nextQSize, 0, sizeof(int));
+				//thrust::sort(thrust::device, d_currQ, d_currQ + currQSize, sortByWeights(d_distance));
+		}
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> t = end - start;
 		//fill the distances obtained for comparison

@@ -13,9 +13,12 @@ compare dynamic parallel vs normal parallel version
  * provide time complexity as well as clock cycles reduced
  
  
+ NOTE: FOR EACH OF THE IMPROVEMENTS SHOW THE PERFORMANCE INCREASE IN PERCENTAGE
+
+ 
  The reason why the performance is slower when you directly use warp level queues in my case
  The warp level queues will reduce the number of collisions by a factor of #queues since each thread
- will have its respective sub queue mapped according to its index. In the naive approach, the while filling the
+ will have its respective sub queue mapped according to its index. In the naive approach, while filling the
  next queue all the threads follow the same path with less number of divergence due to conditions whereas in hierarchical/blocked queue
  approach threads diverge and take different paths thus leading reduction in performance. The naive approach
 maximizes the global memory bandwidth compared to hierarchical or blocked queue approach.
@@ -39,10 +42,25 @@ Texture memory fail:
 I had hoped due to spatial locality the latency is reduced when global memory is accessed through
 texture reference. But in my case it was not able to achieve correct results. Furthermore, The execution of hierarchical approach
 was an asynchronous exit. Also in the case of naive approach the execution time doubled. So I decided to avoid the usage of 
-texture memory. (Add more reasoning) The number of vertices in the graphs I use is more than a million so it is not possible to hold
+texture memory altogether. (Add more reasoning) The number of vertices in the graphs I use is more than a million so it is not possible to hold
 these large arrays in constant memory which is also aggresively cached for read-only access.
  
- The reasons why dfs is not optimal:
+Dynamic parallelism fail:
+1. CUDA provides a way to call a kernel through another kernel. This idea can squeeze out the performance of the GPU
+by using recursion. Remember that since this a level synchronous approach. If there are mulitple blocks executing
+we need to make sure all of them are synchronized before moving to the next kernel. CUDA has an API called 
+cooperative groups which provides synchronization at different granularities. Now, in this case, grid synchronization is required
+if there are mulitple blocks which are filling the next queue. Even though my GPU has a support for Dyanmic Parallelism
+the grid synchronization requires to launch the kernel from a function called cudaLaunchCooperativeKernel()
+which does not permit dynamic parallelism inside its callback. 
+2. The [CMU] paper suggest to use 2 kernels for achieving DP. Where first kernel lauches threads for the current queue
+and the second kernel is launched for all the adjacent vertices. Now, considering average outdegree of vertices, it is not
+ideal to launch few threads as we know that GPU's performance deteriorates even compared with the CPU.
+3. Another method I tried, lauched the outerloop inside a kernel with one thread which calls the another kernel
+at each level (simply moved the outer loop from cpu to gpu) hoping that kernel lauch overhead should be less
+when called from GPU but this approach as well, hurt the performance.
+
+The reasons why dfs is not optimal:
  
  Dfs is asynchronous.
  It will search from a single node until all of its children are relaxed.
@@ -54,4 +72,35 @@ these large arrays in constant memory which is also aggresively cached for read-
  with smaller workload since kernel prologue is a heavy task and should be considered.
  
  Now serial DFS which uses stack provides backtracking. Here no such DS can be used since the node which
- calls the kernel handles all of its adjacent nodes and coloring itself black.  
+ calls the kernel handles all of its adjacent nodes and coloring itself black.
+ 
+ 
+ Why A* is not optimal
+ 
+ It is possible to parallelize A*, but it requires known heuristics prior its search.
+ And when working on grids, we could compute the heuristic for a given cell we can use manhatten distance, euclidean distance, etc.
+ but the number of adjacent neighbours will be at most 8.
+ This is really going to hurt the performance as mentioned earlier. GPU performs well when the workload is large
+ and the overhead of kernel prolog is negligible. 
+ 
+ 
+ APSP
+ 
+ Algorithms like floyd-warshall algorithm, johnson's algorithm are possible to parallelize.
+ I have not yet explored them.
+ 
+ 
+ 
+ 
+ Experimental results
+ 
+ 
+ Table of US roads graphs
+ 
+ G	V	E	CPU	GPU-Naive	GPU-Hierarchical	Speed Up
+ 
+ 
+ Line graph Graph CC(x) vs Execution Time(y) (all gpu imples)
+ 
+ Line graph for SSSP CPU and GPU
+ 

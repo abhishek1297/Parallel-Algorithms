@@ -19,11 +19,13 @@ class Graph {
 	std::vector<int> edgeWeights_m; // weights of all edges in contiguous order
 	//general for printing
 	std::string pathData_m;
-	Graph(const std::string &path, const int &numInputs, const std::vector<int> &indexToRead, bool convertToZeroIdx, const std::string &mode);
+	Graph(const std::string &path, const int &numInputs, const std::vector<int> &indexToRead,
+			bool convertToZeroIdx, const std::string &mode, const float &sparsity = 0.0f);
 
  	friend std::ostream& operator <<(std::ostream &out, Graph &G);
 	private:
- 	void loadGraphFile(adjlist_vec &adjList, const int &numInputs, const std::vector<int> &indexToRead, bool convertToZeroIdx);
+ 	void loadGraphFile(adjlist_vec &adjList, const int &numInputs,
+ 			const std::vector<int> &indexToRead, bool convertToZeroIdx, const float &sparsity);
 };
 
 #endif /* GRAPH_HPP_ */

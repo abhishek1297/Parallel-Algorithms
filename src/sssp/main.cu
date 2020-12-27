@@ -4,7 +4,7 @@ int ssspMain (Graph&& G) {
 
 	std::vector<int> distanceCPU, distanceGPU;
 	std::cout << "Executing...\n";
-//	std::cout  << "CPU Time: " << ssspCPU::execute(G, distanceCPU) << " ms" << std::endl;
+	std::cout  << "CPU Time: " << ssspCPU::execute(G, distanceCPU) << " ms" << std::endl;
 	std::cout  << "GPU Time: " << ssspGPU::execute(G, distanceGPU) << " ms" << std::endl;
 
 

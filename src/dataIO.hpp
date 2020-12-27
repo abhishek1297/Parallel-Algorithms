@@ -1,12 +1,6 @@
-/*
- * dataIO.hpp
- *
- *  Created on: 20-Dec-2020
- *      Author: abhishek
- */
-
 #ifndef DATAIO_HPP_
 #define DATAIO_HPP_
+#include "graph.hpp"
 #include <random>
 #include <climits>
 /**
@@ -24,7 +18,7 @@ struct DatasetInfo {
 };
 
 extern struct DatasetInfo F[];
-int writeToFile(std::string fname, int nV, int nE, double minCPU, double minGPU);
+int writeToFile(const Graph& G, double minCPU, std::vector<double> minGPU, int minDegree, int maxDegree, double avgDegree);
 
 
 

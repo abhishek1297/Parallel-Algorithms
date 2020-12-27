@@ -1,0 +1,53 @@
+/home/abhishek/Downloads/graph datasets/live-journal.txt
+V: 3997962	E: 34661037
+CPU: 114349	GPU: 735.54
+Degree range: [0, 14703]	Avg Degree: 8.66968
+
+/home/abhishek/Downloads/graph datasets/youtube.txt
+V: 1134890	E: 2983495
+CPU: 10598.3	GPU: 252.168
+Degree range: [0, 28576]	Avg Degree: 2.62888
+
+/home/abhishek/Downloads/graph datasets/p2p-Gnutella31.txt
+V: 62586	E: 147892
+CPU: 7.09615	GPU: 5.29226
+Degree range: [0, 78]	Avg Degree: 2.36302
+
+/home/abhishek/Downloads/graph datasets/USA-road-d.CAL.gr
+V: 1890815	E: 4657742
+CPU: 238.277	GPU: 97.7717
+Degree range: [1, 8]	Avg Degree: 2.46335
+
+/home/abhishek/Downloads/graph datasets/USA-road-d.NY.gr
+V: 264346	E: 733846
+CPU: 29.7974	GPU: 29.4857
+Degree range: [1, 8]	Avg Degree: 2.77608
+
+/home/abhishek/Downloads/graph datasets/USA-road-d.W.gr
+V: 6262104	E: 15248146
+CPU: 779.273	GPU: 213.168
+Degree range: [1, 9]	Avg Degree: 2.43499
+
+/home/abhishek/Downloads/graph datasets/USA-road-d.CTR.gr
+V: 14081816	E: 34292496
+CPU: 2697.73	GPU: 434.356
+Degree range: [1, 9]	Avg Degree: 2.43523
+
+/home/abhishek/Downloads/graph datasets/test.txt
+V: 7	E: 11
+CPU: -1
+GPU (N, H, B): 0.124628 0.149572 -1 
+Degree range: [0, 3]	Avg Degree: 1.57143
+
+/home/abhishek/Downloads/graph datasets/test.txt
+V: 7	E: 11
+CPU: -1
+GPU (N, H, B): 0.105249 0.147818 -1 
+Degree range: [0, 3]	Avg Degree: 1.57143
+
+/home/abhishek/Downloads/graph datasets/USA-road-d.USA.gr
+V: 23947347	E: 58333344
+CPU: -1
+GPU (N, H, B): 673.227 756.056 -1 
+Degree range: [1, 9]	Avg Degree: 2.4359
+

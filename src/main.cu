@@ -21,14 +21,17 @@
     {true, 2, {0, 1}, dir + "youtube.txt"}, // 2
     {false, 2, {0, 1}, dir + "roadNet-CA.txt"},// 3
     {false, 2, {0, 1}, dir + "p2p-Gnutella31.txt"}, // 4
+
     {true, 4, {1, 2, 3}, dir + "USA-road-d.CAL.gr"}, // 5
     {true, 4, {1, 2, 3}, dir + "USA-road-d.NY.gr"}, // 6
     {true, 4, {1, 2, 3}, dir + "USA-road-d.W.gr"}, // 7
     {true, 4, {1, 2, 3}, dir + "USA-road-d.CTR.gr"} // 8
+    {true, 4, {1, 2, 3}, dir + "USA-road-d.USA.gr"} // 8
 */
 
+
 int main() {
-	const struct DatasetInfo &inp = F[1];
+	const struct DatasetInfo &inp = F[0];
 	Graph G(inp.fname, inp.numInputs, inp.indexToRead, inp.toZeroIdx, "bfs");
 	std::cout << G << std::endl;
 	return bfsMain(std::move(G));

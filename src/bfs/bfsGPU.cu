@@ -26,7 +26,7 @@ namespace bfsGPU {
 	int *d_currQ;
 	int *d_nextQ;
 	int *d_nextQSize;
-//	texture<int, cudaTextureType1D, cudaReadModeElementType> tex_edgeOffsets;
+	texture<int, cudaTextureType1D, cudaReadModeElementType> tex_edgeOffsets;
 
 
 	void initMemory(Graph &G, int source, std::vector<int> &distanceCheck) {
@@ -52,14 +52,15 @@ namespace bfsGPU {
 		distanceCheck[source] = 0;
 		cudaMemcpy(d_distance, distanceCheck.data(), G.numVertices_m * sizeof(int), cudaMemcpyHostToDevice);
 		//texture reference assigned to the edge offsets
-//		size_t offset{0};
-//		cudaBindTexture(&offset, tex_edgeOffsets, d_edgeOffsets, G.numVertices_m * sizeof(int));
+		size_t offset{0};
+		cudaBindTexture(&offset, tex_edgeOffsets, d_currQ, G.numVertices_m * sizeof(int));
 	}
 
 	/**
 	 * The parent kernel is similar to launching the kernel from the cpu.
-	 * But in this case launching the workload from the gpu itself to save some time.
+	 * But in this case launching the workload from the gpu itself.
 	 */
+	/*
 	extern "C"
 	__global__ void hierarchical::parentKernel(int *d_adjList,
 			int *d_edgeOffsets,
@@ -70,29 +71,45 @@ namespace bfsGPU {
 			int *d_nextQSize) {
 
 		int currQSize = 1;
-		int depth = 0;
+		int dev_depth = 0;
 		int numBlocks;
 		while (currQSize) {
 
 			numBlocks = ((currQSize - 1) / BLOCK_SIZE) + 1;
-			childKernel<<<numBlocks, BLOCK_SIZE>>>(++depth, d_adjList, d_edgeOffsets,
+			childKernel<<<numBlocks, BLOCK_SIZE>>>(++dev_depth, d_adjList, d_edgeOffsets,
 					d_vertexDegree, d_distance,
 					d_currQ, currQSize, d_nextQ, d_nextQSize);
 
 			cudaDeviceSynchronize(); // halt gpu
 			currQSize = *d_nextQSize;
-//			*d_nextQSize = 0;
-//			int *temp = d_nextQ;
-//			d_nextQ = d_currQ;
-//			d_currQ = temp;
+			cudaMemcpyAsync(d_currQ, d_nextQ, sizeof(int) * currQSize, cudaMemcpyDeviceToDevice);
 			cudaMemsetAsync(d_nextQSize, 0, sizeof(int));
-			cudaMemcpyAsync(d_currQ, d_nextQ, currQSize * sizeof(int), cudaMemcpyDeviceToDevice);
+
 		}
 	}
 
+	double hierarchical::executeDP(Graph &G, std::vector<int> &distanceCheck, int source) {
+
+		//initialize data
+		initMemory(G, source, distanceCheck);
+		//execution
+		auto start = std::chrono::high_resolution_clock::now();
+		parentKernel<<<1, 1>>>(d_adjList, d_edgeOffsets, d_vertexDegree, d_distance,
+								  d_currQ, d_nextQ, d_nextQSize);
+		cudaDeviceSynchronize();
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> t = end - start;
+		//fill the distances obtained for comparison
+		cudaMemcpy(distanceCheck.data(), d_distance, G.numVertices_m * sizeof(int), cudaMemcpyDeviceToHost);
+		//free device pointers
+		freeMemory();
+
+		return t.count();
+	}*/
 
 	/**
-	 * The child kernel which performs the main operation of traversal over the graph.
+	 *
+	 * The kernel which performs the main operation of traversal over the graph.
 	 */
 
 	extern "C"
@@ -125,7 +142,7 @@ namespace bfsGPU {
 
 					if (tIdx < currQSize) {
 
-						parent = d_currQ[tIdx];//get current values in parallel
+						parent = tex1Dfetch(tex_edgeOffsets, tIdx);//get current values in parallel
 						subSharedQIdx = tIdx & (NUM_SUB_QUEUES - 1);
 
 						//expand all children
@@ -178,24 +195,6 @@ namespace bfsGPU {
 					}
 		}
 
-	double hierarchical::executeDP(Graph &G, std::vector<int> &distanceCheck, int source) {
-
-		//initialize data
-		initMemory(G, source, distanceCheck);
-		//execution
-		auto start = std::chrono::high_resolution_clock::now();
-		parentKernel<<<1, 1>>>(d_adjList, d_edgeOffsets, d_vertexDegree, d_distance,
-								  d_currQ, d_nextQ, d_nextQSize);
-		cudaDeviceSynchronize();
-		auto end = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double, std::milli> t = end - start;
-		//fill the distances obtained for comparison
-		cudaMemcpy(distanceCheck.data(), d_distance, G.numVertices_m * sizeof(int), cudaMemcpyDeviceToHost);
-		//free device pointers
-		freeMemory();
-
-		return t.count();
-	}
 
 	double hierarchical::execute(Graph &G, std::vector<int> &distanceCheck, int source) {
 
@@ -367,14 +366,15 @@ namespace bfsGPU {
 		cudaFree(d_currQ);
 		cudaFree(d_nextQ);
 		cudaFree(d_nextQSize);
-//		cudaUnbindTexture(tex_edgeOffsets);
+		cudaUnbindTexture(tex_edgeOffsets);
 	}
 
 }
 
-
-/**
- * 	extern "C" __global__ void kernelTex(int *d_edgeOffsets) {
+/*
+ *
+ * Testing texture memory
+extern "C" __global__ void kernelTex(int *d_edgeOffsets) {
 
 		int x = threadIdx.x;
 
@@ -383,26 +383,26 @@ namespace bfsGPU {
 
 	double executeTex(Graph &G, std::vector<int> &distanceCheck, int source) {
 		//assigning edge offsets to texture memory
-//		size_t offset;
-//		int arr[10] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-////		tex_edgeOffsets.addressMode[0] = cudaAddressModeWrap;
-////		tex_edgeOffsets.filterMode = cudaFilterModeLinear;
-////		tex_edgeOffsets.normalized = true;
-//		// Bind the array to the texture
-//		int *dev_ptr;
-//		cudaChannelFormatDesc desc = cudaCreateChannelDesc<int>();
-//		gpuErrchk(cudaMalloc(&dev_ptr, 10 * sizeof(int)));
-//		gpuErrchk(cudaMemcpy(dev_ptr, arr, sizeof(int) * 10, cudaMemcpyHostToDevice));
-//
-//		gpuErrchk(cudaBindTexture(&offset, tex_edgeOffsets, dev_ptr, 10 * sizeof(int)));
-////		gpuErrchk(cudaBindTextureToArray(tex_edgeOffsets, dev_ptr, desc));
+		size_t offset;
+		int arr[10] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+		tex_edgeOffsets.addressMode[0] = cudaAddressModeWrap;
+		tex_edgeOffsets.filterMode = cudaFilterModeLinear;
+		tex_edgeOffsets.normalized = true;
+		// Bind the array to the texture
+		int *dev_ptr;
+		cudaChannelFormatDesc desc = cudaCreateChannelDesc<int>();
+		gpuErrchk(cudaMalloc(&dev_ptr, 10 * sizeof(int)));
+		gpuErrchk(cudaMemcpy(dev_ptr, arr, sizeof(int) * 10, cudaMemcpyHostToDevice));
+
+		gpuErrchk(cudaBindTexture(&offset, tex_edgeOffsets, dev_ptr, 10 * sizeof(int)));
+		gpuErrchk(cudaBindTextureToArray(tex_edgeOffsets, dev_ptr, desc));
 
 		initMemory(G, source, distanceCheck);
 		kernelTex<<<1, 10>>>(d_edgeOffsets);
 		cudaDeviceSynchronize();
 		freeMemory();
-//		cudaUnbindTexture(tex_edgeOffsets);
-//		cudaFree(dev_ptr);
-//		printf("%s", cudaGetErrorString(cudaGetLastError()));
+		cudaUnbindTexture(tex_edgeOffsets);
+		cudaFree(dev_ptr);
+		printf("%s", cudaGetErrorString(cudaGetLastError()));
 	}
- */
+*/

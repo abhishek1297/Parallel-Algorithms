@@ -3,9 +3,10 @@
 #include <sstream>
 #include <functional>
 #include <string>
+#include <random>
 #include <iostream>
 #include <algorithm>
-
+#include <assert.h>
 
 /**
  * This constructor will generate a Adjacency list graph representation
@@ -23,10 +24,10 @@ Graph::Graph(const std::string &path,
 		const int &numInputs,
 		const std::vector<int> &indexToRead,
 		bool convertToZeroIdx,
-		const std::string &mode) :pathData_m(path){
+		const std::string &mode, const float &sparsity) :pathData_m(path){
 
 	adjlist_vec adjList;
-	loadGraphFile(adjList, numInputs, indexToRead, convertToZeroIdx);
+	loadGraphFile(adjList, numInputs, indexToRead, convertToZeroIdx, sparsity);
 	int nV{static_cast<int>(adjList.size())};
 	edgeOffsets_m.resize(nV);
 	vertexDegree_m.resize(nV);
@@ -66,7 +67,7 @@ Graph::Graph(const std::string &path,
 void Graph::loadGraphFile(adjlist_vec &adjList,
 		const int &numInputs,
 		const std::vector<int> &indexToRead,
-		bool convertToZeroIdx) {
+		bool convertToZeroIdx, const float& sparsity) {
 
 	std::ifstream ifs(pathData_m, std::ifstream::in);
 	ifs.seekg(0, ifs.beg);
@@ -118,11 +119,13 @@ void Graph::loadGraphFile(adjlist_vec &adjList,
 			std::stringstream ss(line);
 			std::string t;
 			int i{0};
+
 			while (ss >> t)
 				token[i++] = t;
 			store(token[fromIdx], token[toIdx], numInputs > 2 ? token[weightIdx]: "-1");
 		}
 		ifs.close();
+
 	}
 	else {
 		std::cout << "Error Loading File" << std::endl;

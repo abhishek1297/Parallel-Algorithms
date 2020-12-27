@@ -1,4 +1,4 @@
-src/main.o : ../src/main.cu \
+src/bfs/main.o : ../src/bfs/main.cu \
     /usr/include/stdc-predef.h \
     /usr/include/cuda_runtime.h \
     /usr/include/crt/host_config.h \
@@ -38,6 +38,8 @@ src/main.o : ../src/main.cu \
     /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
     /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
     /usr/include/strings.h \
+    /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+    /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
     /usr/include/time.h \
     /usr/include/x86_64-linux-gnu/bits/time.h \
     /usr/include/x86_64-linux-gnu/bits/types.h \
@@ -81,6 +83,8 @@ src/main.o : ../src/main.cu \
     /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
     /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
     /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
+    /usr/include/x86_64-linux-gnu/bits/stdio.h \
+    /usr/include/x86_64-linux-gnu/bits/stdio2.h \
     /usr/include/c++/8/stdlib.h \
     /usr/include/c++/8/cstdlib \
     /usr/include/stdlib.h \
@@ -97,13 +101,16 @@ src/main.o : ../src/main.cu \
     /usr/include/x86_64-linux-gnu/bits/select.h \
     /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
     /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
+    /usr/include/x86_64-linux-gnu/bits/select2.h \
     /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
     /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
     /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
     /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
     /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
     /usr/include/alloca.h \
+    /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
     /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+    /usr/include/x86_64-linux-gnu/bits/stdlib.h \
     /usr/include/c++/8/bits/std_abs.h \
     /usr/include/assert.h \
     /usr/include/crt/math_functions.h \
@@ -121,6 +128,7 @@ src/main.o : ../src/main.cu \
     /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
     /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h \
     /usr/include/x86_64-linux-gnu/bits/iscanonical.h \
+    /usr/include/x86_64-linux-gnu/bits/mathinline.h \
     /usr/include/crt/math_functions.hpp \
     /usr/include/cuda_surface_types.h \
     /usr/include/cuda_texture_types.h \
@@ -153,12 +161,10 @@ src/main.o : ../src/main.cu \
     /usr/include/texture_indirect_functions.h \
     /usr/include/surface_indirect_functions.h \
     /usr/include/device_launch_parameters.h \
-    ../src/dataIO.hpp \
-    /usr/include/c++/8/random \
-    /usr/include/c++/8/string \
-    /usr/include/c++/8/bits/stringfwd.h \
-    /usr/include/c++/8/bits/memoryfwd.h \
-    /usr/include/c++/8/bits/char_traits.h \
+    ../src/bfs/main.hpp \
+    ../src/bfs/bfsCPU.hpp \
+    ../src/bfs/../graph.hpp \
+    /usr/include/c++/8/vector \
     /usr/include/c++/8/bits/stl_algobase.h \
     /usr/include/c++/8/bits/functexcept.h \
     /usr/include/c++/8/ext/numeric_traits.h \
@@ -170,19 +176,34 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/8/bits/ptr_traits.h \
     /usr/include/c++/8/debug/debug.h \
     /usr/include/c++/8/bits/predefined_ops.h \
+    /usr/include/c++/8/bits/allocator.h \
+    /usr/include/x86_64-linux-gnu/c++/8/bits/c++allocator.h \
+    /usr/include/c++/8/ext/new_allocator.h \
+    /usr/include/c++/8/bits/memoryfwd.h \
+    /usr/include/c++/8/bits/stl_construct.h \
+    /usr/include/c++/8/ext/alloc_traits.h \
+    /usr/include/c++/8/bits/alloc_traits.h \
+    /usr/include/c++/8/bits/stl_uninitialized.h \
+    /usr/include/c++/8/bits/stl_vector.h \
+    /usr/include/c++/8/initializer_list \
+    /usr/include/c++/8/bits/stl_bvector.h \
+    /usr/include/c++/8/bits/functional_hash.h \
+    /usr/include/c++/8/bits/range_access.h \
+    /usr/include/c++/8/bits/vector.tcc \
+    /usr/include/c++/8/string \
+    /usr/include/c++/8/bits/stringfwd.h \
+    /usr/include/c++/8/bits/char_traits.h \
     /usr/include/c++/8/bits/postypes.h \
     /usr/include/c++/8/cwchar \
     /usr/include/wchar.h \
     /usr/include/x86_64-linux-gnu/bits/wchar.h \
     /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
     /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h \
+    /usr/include/x86_64-linux-gnu/bits/wchar2.h \
     /usr/include/c++/8/cstdint \
     /usr/lib/gcc/x86_64-linux-gnu/8/include/stdint.h \
     /usr/include/stdint.h \
     /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
-    /usr/include/c++/8/bits/allocator.h \
-    /usr/include/x86_64-linux-gnu/c++/8/bits/c++allocator.h \
-    /usr/include/c++/8/ext/new_allocator.h \
     /usr/include/c++/8/bits/localefwd.h \
     /usr/include/x86_64-linux-gnu/c++/8/bits/c++locale.h \
     /usr/include/c++/8/clocale \
@@ -195,8 +216,6 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/8/bits/cxxabi_forced.h \
     /usr/include/c++/8/bits/stl_function.h \
     /usr/include/c++/8/backward/binders.h \
-    /usr/include/c++/8/bits/range_access.h \
-    /usr/include/c++/8/initializer_list \
     /usr/include/c++/8/bits/basic_string.h \
     /usr/include/c++/8/ext/atomicity.h \
     /usr/include/x86_64-linux-gnu/c++/8/bits/gthr.h \
@@ -208,8 +227,6 @@ src/main.o : ../src/main.cu \
     /usr/include/x86_64-linux-gnu/bits/cpu-set.h \
     /usr/include/x86_64-linux-gnu/bits/setjmp.h \
     /usr/include/x86_64-linux-gnu/c++/8/bits/atomic_word.h \
-    /usr/include/c++/8/ext/alloc_traits.h \
-    /usr/include/c++/8/bits/alloc_traits.h \
     /usr/include/c++/8/ext/string_conversions.h \
     /usr/include/c++/8/cstdio \
     /usr/include/c++/8/cerrno \
@@ -220,25 +237,7 @@ src/main.o : ../src/main.cu \
     /usr/include/asm-generic/errno.h \
     /usr/include/asm-generic/errno-base.h \
     /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
-    /usr/include/c++/8/bits/functional_hash.h \
     /usr/include/c++/8/bits/basic_string.tcc \
-    /usr/include/c++/8/limits \
-    /usr/include/c++/8/bits/random.h \
-    /usr/include/c++/8/vector \
-    /usr/include/c++/8/bits/stl_construct.h \
-    /usr/include/c++/8/bits/stl_uninitialized.h \
-    /usr/include/c++/8/bits/stl_vector.h \
-    /usr/include/c++/8/bits/stl_bvector.h \
-    /usr/include/c++/8/bits/vector.tcc \
-    /usr/include/c++/8/bits/uniform_int_dist.h \
-    /usr/include/x86_64-linux-gnu/c++/8/bits/opt_random.h \
-    /usr/include/c++/8/bits/random.tcc \
-    /usr/include/c++/8/numeric \
-    /usr/include/c++/8/bits/stl_numeric.h \
-    /usr/include/c++/8/climits \
-    ../src/bfs/main.hpp \
-    ../src/bfs/bfsCPU.hpp \
-    ../src/bfs/../graph.hpp \
     /usr/include/c++/8/iostream \
     /usr/include/c++/8/ostream \
     /usr/include/c++/8/ios \
@@ -265,18 +264,20 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/8/bits/istream.tcc \
     ../src/bfs/bfsGPU.hpp \
     /usr/include/cuda.h \
-    ../src/sssp/main.hpp \
-    ../src/sssp/ssspCPU.hpp \
-    ../src/sssp/../graph.hpp \
-    /usr/include/c++/8/chrono \
-    /usr/include/c++/8/ratio \
-    /usr/include/c++/8/ctime \
-    /usr/include/c++/8/bits/parse_numbers.h \
+    ../src/bfs/../dataIO.hpp \
+    /usr/include/c++/8/random \
+    /usr/include/c++/8/limits \
+    /usr/include/c++/8/bits/random.h \
+    /usr/include/c++/8/bits/uniform_int_dist.h \
+    /usr/include/x86_64-linux-gnu/c++/8/bits/opt_random.h \
+    /usr/include/c++/8/bits/random.tcc \
+    /usr/include/c++/8/numeric \
+    /usr/include/c++/8/bits/stl_numeric.h \
+    /usr/include/c++/8/climits \
     /usr/include/c++/8/algorithm \
     /usr/include/c++/8/utility \
     /usr/include/c++/8/bits/stl_relops.h \
     /usr/include/c++/8/bits/stl_algo.h \
     /usr/include/c++/8/bits/algorithmfwd.h \
     /usr/include/c++/8/bits/stl_heap.h \
-    /usr/include/c++/8/bits/stl_tempbuf.h \
-    ../src/sssp/ssspGPU.hpp
+    /usr/include/c++/8/bits/stl_tempbuf.h
