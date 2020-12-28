@@ -97,10 +97,12 @@ The reasons why dfs is not optimal:
  
  Table of US roads graphs
  
- G	V	E	CPU	GPU-Naive	GPU-Hierarchical	Speed Up
+ G	V	E GPU-Naive	GPU-Hierarchical Speed Up
  
+ Triple bar graph of vertices vs execution time
  
  Line graph Graph CC(x) vs Execution Time(y) (all gpu imples)
  
  Line graph for SSSP CPU and GPU
+ 
  

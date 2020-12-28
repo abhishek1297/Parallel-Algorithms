@@ -26,12 +26,12 @@
     {true, 4, {1, 2, 3}, dir + "USA-road-d.NY.gr"}, // 6
     {true, 4, {1, 2, 3}, dir + "USA-road-d.W.gr"}, // 7
     {true, 4, {1, 2, 3}, dir + "USA-road-d.CTR.gr"} // 8
-    {true, 4, {1, 2, 3}, dir + "USA-road-d.USA.gr"} // 8
+    {true, 4, {1, 2, 3}, dir + "USA-road-d.USA.gr"} // 9
 */
 
 
 int main() {
-	const struct DatasetInfo &inp = F[0];
+	const struct DatasetInfo &inp = F[9];
 	Graph G(inp.fname, inp.numInputs, inp.indexToRead, inp.toZeroIdx, "bfs");
 	std::cout << G << std::endl;
 	return bfsMain(std::move(G));

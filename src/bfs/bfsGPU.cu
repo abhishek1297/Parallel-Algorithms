@@ -13,7 +13,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 namespace bfsGPU {
 
 	const int BLOCK_SIZE = 1024;
-	const int BLOCK_QUEUE_SIZE = 128;
+	const int BLOCK_QUEUE_SIZE = 32;
 	const int SUB_QUEUE_SIZE = 4;
 	const int NUM_SUB_QUEUES = 32;
 
@@ -142,8 +142,9 @@ namespace bfsGPU {
 
 					if (tIdx < currQSize) {
 
-						parent = tex1Dfetch(tex_edgeOffsets, tIdx);//get current values in parallel
+						parent = d_currQ[tIdx];//get current values in parallel
 						subSharedQIdx = tIdx & (NUM_SUB_QUEUES - 1);
+//						subSharedQIdx = (tIdx / SUB_QUEUE_SIZE) % NUM_SUB_QUEUES;
 
 						//expand all children
 						for (int i=d_edgeOffsets[parent]; i<d_edgeOffsets[parent]+d_vertexDegree[parent]; ++i) {
@@ -274,6 +275,7 @@ namespace bfsGPU {
 				s_globalOffset = atomicAdd(d_nextQSize, s_nextQSize);
 			__syncthreads();
 
+			if (threadIdx.x >= BLOCK_QUEUE_SIZE) return;
 			for (int i=threadIdx.x; i<s_nextQSize; i+=blockDim.x) {// fill the global memory
 				d_nextQ[s_globalOffset + i] = s_nextQ[i];
 			}
