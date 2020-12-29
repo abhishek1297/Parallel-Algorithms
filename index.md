@@ -36,6 +36,10 @@ Syntax highlighted code block
 [Link](url) and ![Image](src)
 ```
 
+| one | two | three |
+|---|---|---|
+| sdf | sdf | sdf |
+| sdf | sdf | sdf |
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
 
 ### Jekyll Themes
