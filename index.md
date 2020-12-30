@@ -21,9 +21,9 @@ Given an undirected, unweighted graph _G(V,E)_  and a given source _S_, find the
 The BFS Algorithm is,
 - Adding S into the queue
 - Until all vertices are not visited
--- Loop over all the vertices adjacent to the front vertex
--- To avoid cycles mark the vertices as visited
--- Add them at the back of the queue
+   Loop over all the vertices adjacent to the front vertex
+   To avoid cycles mark the vertices as visited
+   Add them at the back of the queue
 
 
 <img src="images/atomic.jpg" width="400" height="450" align="center"/>
