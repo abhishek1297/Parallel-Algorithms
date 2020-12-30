@@ -8,9 +8,10 @@ When it comes to Graph, It is one of the most important data structures which ca
 This project depicts the use of GPGPU to help improve the performance of the Pathfinding algorithms, Breadth-First Search and Single-Source Shortest Path specifically. I will present GPU implementations of these algorithms along with different approaches taken. Experimental results show that up to X times speedup is achieved over its CPU counterpart.
 
 
-<img src="images/atomic.jpg" width="250" height="350" />
-![alt text](images/bargraph.png?raw=true)
-![alt text](images/linegraph.png?raw=true)
+<img src="images/atomic.jpg" width="500" height="350" />
+
+<img src="images/bargraph.png" width="500" height="350" />
+<img src="images/linegraph.png" width="500" height="350" />
 
 ## Welcome to GitHub Pages
 
