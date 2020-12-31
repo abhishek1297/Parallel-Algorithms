@@ -3,4 +3,4 @@ theme: jekyll-theme-cayman
 title: "cudaPath"
 email: "abs12797@gmail.com"
 description: > # this means to ignore newlines until "baseurl:"
-  Approach to pathfinding accelerated using GPU.
+  A GPU accelerated Pathfinding.
