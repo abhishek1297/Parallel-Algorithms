@@ -31,7 +31,7 @@ The queue ensures level-wise progression. This serial implementation has the tim
 
 This approach is somewhat similar to the serial implementation. While parallelizing BFS, the only way to traverse is level-wise. So as suggested in [B4] perform level-synchronous BFS where the current queue represents the current level. Instead of only visiting the front vertex of the queue, distribute each vertex to a thread to fill the next level queue in parallel. Even if the current vertex may have different paths, the level-synchronous approach makes sure that the overwrites by different threads will always be the same.
 
-<p align="center"> <img src="images/bfs_rep.jpg" width="350" height="350" /> </p>
+<p align="center"> <img src="images/bfs_rep.jpg" width="350" height="400" /> </p>
 
 ### Possible Problems
 - At a bare minimum, GPU requires around ~300 clock cycles to access global memory. It is always ideal to perform memory coalescing, where all the threads access the memory at the same time. It is important to maximize the bandwidth to global memory.
@@ -49,7 +49,7 @@ CUDA provides an L2 cache for each block where only threads running in that bloc
 Hierarchical Queue Approach
 As shown in [B1] it is possible to specialize the queue by adding another level for warps. Thus, avoiding collisions at the block-level queue as well. According to the indices of threads, each one is mapped to its respective sub-queue. The authors of the paper have implemented it such that they copy these sub-queues to the block-level queue. It seems unreasonable because both blocked-level and sub-queues reside inside shared memory. I have skipped copying to block-level and directly coalesced to global memory. Similar to the previous approach, when the sub-queue becomes full, the thread will write to the global queue.
 
-<p align="center"> <img src="images/hierar.jpg" width="600" height="350" /> </p>
+<p align="center"> <img src="images/hierar.jpg" width="650" height="450" /> </p>
 
 
 | **G** | **V** | **E** | **CPU** | **GPU-N** | **GPU-B** | **GPU-H** |
