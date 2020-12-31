@@ -1,1 +1,1 @@
-# cuPath: A GPU accelerated Pathfinding
+# cudaPath: A GPU accelerated Pathfinding
