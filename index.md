@@ -19,7 +19,7 @@ Given an undirected, unweighted graph _G(V,E)_  and a given source _S_, find the
 ## Serial Approach
 
 The BFS Algorithm is,
-- Adding S into the queue
+- Adding _S_ into the queue
 - Until all vertices are not visited
   - Loop over all the vertices adjacent to the front vertex
   - To avoid cycles mark the vertices as visited
@@ -34,12 +34,12 @@ This approach is somewhat similar to the serial implementation. While paralleliz
 <p align="center"> <img src="images/bfs_rep.jpg" width="500" height="350" /> </p>
 
 ### Possible Problems
-At a bare minimum, GPU requires around ~300 clock cycles to access global memory. It is always ideal to perform memory coalescing, where all the threads access the memory at the same time. It is important to maximize the bandwidth to global memory.
-Since performing level-synchronization is necessary, All the threads need to update the same queue, which brings race conditions between them that could lead to inconsistencies.
-Parallelizing the outermost loop is difficult because the algorithm goes level by level. Therefore, the CUDA kernel must be launched for each new level. This incurs the cost of time consumed for data transfer between CPU and GPU.
-The graph density as well as regularness also play a huge role. It is possible that a graph may not utilize maximum GPU throughput i.e launching less number of threads at every level.
-Highly irregular access to global memory will slow down the performance.
-The load imbalance between threads is difficult to avoid i.e the outdegrees varying drastically at the same time.
+- At a bare minimum, GPU requires around ~300 clock cycles to access global memory. It is always ideal to perform memory coalescing, where all the threads access the memory at the same time. It is important to maximize the bandwidth to global memory.
+- Since performing level-synchronization is necessary, All the threads need to update the same queue, which brings race conditions between them that could lead to inconsistencies.
+- Parallelizing the outermost loop is difficult because the algorithm goes level by level. Therefore, the CUDA kernel must be launched for each new level. This incurs the cost of time consumed for data transfer between CPU and GPU.
+- The graph density as well as regularness also play a huge role. It is possible that a graph may not utilize maximum GPU throughput i.e launching less number of threads at every level.
+- Highly irregular access to global memory will slow down the performance.
+- The load imbalance between threads is difficult to avoid i.e the outdegrees varying drastically at the same time.
 
 ### Blocked Queue Approach
 
@@ -69,7 +69,7 @@ The weighted, undirected graph _G(V,E,W)_ and a source vertex _S_, find the shor
 ## Serial Approach
 The Dijkstra’s Algorithm is,
 - Set all the distances to infinity
-- Add S to the queue.
+- Add _S_ to the queue.
 - Until all vertices are not visited
   - Pick a vertex which is closer to the current vertex from the queue
   - Loop over all the adjacent vertices
@@ -88,6 +88,70 @@ BFS and Dijkstra’s hold very similar approaches except that we need to extract
 To avoid inconsistencies at the global queue as well as the local queue(s). CUDA threads could make use of atomic operations to correctly fill the queues without overwriting at the same location. These atomic operations require an address at which the thread will make its manipulations. Thus, when calling these functions, threads will have exclusive access at that memory location. But the access becomes serialized and also affects the performance.
 
 <p align="center"> <img src="images/atomic.jpg" width="500" height="350" /> </p>
+
+## Shared Memory
+- The shared memory in my GPU has 32 banks. Similarly, I have created a total of 32 queues of length 4 in Hierarchical-queue approach. In a way, it perfectly matches with all the banks. In GPUs with CC 6.1, the bank conflict does not occur at the warp level even if two threads from the same warp map to the same bank. This access will be parallel.
+- This approach does reduce collisions. But the naive approach has an advantage of simplicity i.e threads in naive implementation will not have much of divergence since each thread is only checking whether the current vertex is visited or not. If not, then write to global memory. Additionally, in the shared memory approaches, there are at most two writes, firstly to the lower queues and then the global queue. Altogether, These aspects deteriorate the performance by 6-8% compared to the naive BFS as shown in the graph below. 
+<p align="center"> <img src="images/linegraph.png" width="500" height="350" /> </p>
+The graphs shown above have the average outdegree between 2-3. Therefore, the execution time is directly proportional to the number of vertices in regular or near-regular graphs.
+- Between blocked-queue and hierarchical-queue, the latter performs well on graphs with higher clustering coefficient. For smaller graphs, if we consider the thread divergence, both approaches share a similarity in their exploration process. But the conflict at the Hierarchical-queue is reduced. So, the reason why hierarchical-queue is slower for smaller graphs is, while loading the shared queues to the global queue will take more time because of more calculations required to map 2D addresses to 1D addresses.
+
+<p align="center"> <img src="images/bargraph.png" width="500" height="350" /> </p>
+
+- The above graph was calculated on Network Graphs of Google, Youtube, etc. Different clustering coefficient and the unevenly distributed outdegree at each vertex will reduce the performance. Therefore, the CPU implementation outperformed every other approach because each thread will have different workloads increasing execution time. The [D1] suggested approach will be better here. But this high variance of outdegree should be considered in Network Graphs where each vertex represents a user and its connections.
+
+## Kernel Launch and Dynamic Parallelism 
+- CUDA provides a way to call the kernel within a kernel. This is called Dynamic Parallelism (DP). By calling the kernel recursively, we could maximize the throughput of the GPU by launching unused parts of it.
+- Remember, since both algorithms require a level-synchronous approach. If the GPU is executing multiple blocks, then we must ensure that changes made by all of the blocks to the global queue must take place before calling the next kernel recursively.
+- CUDA API called cooperative groups provides synchronization options at different granularities. In the DP solution, grid synchronization is needed to make sure all the blocks have executed completely before moving further.
+- Unfortunately, this cooperative groups API does not permit the usage of DP. And there is no workaround for inter-block synchronization.
+- I also moved the CPU code of the outer loop hoping to avoid data transfer latencies. But this approach was not able to achieve a significant performance increase. My guess would be the kernel launch overhead by a single thread is reducing or at least reaching the same performance as that of the kernel launch from the CPU.
+- [D1] describes the implementation of using two kernels where the second kernel will be used for exploration of the adjacent vertices. But the graph datasets I am working with have the average out degrees around 5-10 vertices. Evidently, GPU does not perform well even compared with its CPU counterpart because the cost of the kernel prologue outweighs the parallelism it achieves.
+
+## Read-only caches
+- CUDA texture memory(L2) is an on-chip global memory that is aggressively cached for read-only access. There is another read-only constant memory(L2).
+- There is only ~64 KB of constant memory. So there is no way it can hold a large array.
+- This is where texture memory comes into play. Texture memory exhibits spatial locality meaning nearby threads will read nearby addresses of global memory.
+- Unfortunately for Pathfinding algorithms with large arrays, spatial locality does not provide much performance increase. I have attempted reading the current queue array as well as offsets array by binding them to a texture reference. In some cases, the performance decreased by 11% and some cases showed doubled execution times. My assumption is, Multiple threads will attempt to flush texture memory according to their needs and increase the rate of cache misses (Unconfirmed).
+
+## Prefix-Sum
+To avoid the usage of atomic operations when calculating the current position for that thread. It is possible to compute the global queue offsets for each thread based on the prefix-sum of their outdegrees. This way threads will not wait for other threads while filling the next queue. So computing a prefix-sum for the current queue would be required at each iteration of the outer loop. Thrust library provides predefined implementations of these algorithms. But would this not incur additional cost even if we compute it parallelly with the help of the GPU? Although, it could be possible to store all the prefix-sums at each iteration. We need to know which vertices will be inside the current queue for every iteration before the main execution. But this seems unreasonable considering the algorithm would not perform well on unknown graphs. But I have not explored this.
+
+# Other Algorithms
+## DFS
+- DFS is asynchronous meaning at a single vertex the search will continue until all of its children are relaxed. In most of the cases, the outdegrees are not unreasonably large.
+Unlike BFS which launches threads at each level where the queue is much larger, DFS will never utilize the GPU’s full capability. For the most part, it will make multiple calls with only fewer threads at the mercy of outdegree at each vertex.
+- DFS follows the idea of Backtracking which requires a data structure like Stack. The very idea of the parallelizing stack is difficult since both insertion and extraction occur at the same end.
+
+## A* Search
+- It is possible to implement this idea because the SSSP could be expanded to make it work like A* by only proceeding further based on heuristics at the current vertex.
+- Now the graphs that I use, Do not provide heuristics for each value which makes sense because the target vertex is needed to approximate heuristic values.
+- One possible solution could be to take the target vertex and apply parallel SSSP to all the vertices of the graph to obtain distances. I do not find this solution as an optimal one.
+- A* is also used in grid-like structures such as mazes. In this case, it is possible to compute the heuristic at runtime using functions such as Manhattan Distance, Euclidean Distance, etc. Parallelizing this approach is not worth the trouble because even considering diagonal paths, at most 8 threads will be launched at each cell. And as mentioned earlier, GPU always works well with heavier loads. We could parallelize this over CPU cores. But this is beyond the scope of this project.
+
+# Environment
+All computations were done using my local machine with Intel i5-7300HQ CPU @ 2.50GHz with 8 GB RAM and 4 cores. The GPU used is Nvidia GeForce GTX 1050 mobile @ 1.49GHz with 4 GB RAM @ 3.5GHz, and 640 CUDA cores.
+
+# Closure
+I have shown that GPGPU usage can be used to achieve high performance on Graph Algorithms. I have provided my opinions on pre-existing approaches as well as shown the performance gaps between them. Granted that it is difficult to optimize these algorithms due to nature or uncertainty of the graph itself, be that as is may, substantially great speed-ups were obtained and with some fine-tuning we could keep increasing them marginally.
+
+# References
+
+[B1]  _Lijuan Luo, Martin Wong, Wen-mei Hwu, “An Effective GPU Implementation of Breadth-First Search”_
+
+[B2] _Duane Merrill, Micheal Garland, Andrew Grimshaw, “Scalable GPU Graph Traversal”_
+ 
+[B3] _Rudolf Berrendorf and, Matthias Makulla, “Level-Synchronous Parallel Breadth-First Search Algorithms For Multicore and Multiprocessor Systems”_
+
+[B4] _Pawan Harish, and P. J. Narayanan, “Accelerating large graph algorithms on the GPU using CUDA”_
+
+[D1] _Peter Zhang, John Matty, Eric Holk, Marcin Zalewski, Jonathan Chu, Samantha Misurda, Scott McMillan, Andrew Lumsdaine, “Dynamic Parallelism for Simple and Efficient GPU Graph Algorithms”_
+
+[D2] _Pedro J. Martín, Roberto Torres, and Antonio Gavilanes, “CUDA Solutions for the SSSP Problem”_
+
+[D3] _Michael Kainer, Jesper Larsson Träff, “More Parallelism in Dijkstra’s Single-Source Shortest Path Algorithm”_
+
+
 ## Welcome to GitHub Pages
 
 You can use the [editor on GitHub](https://github.com/abhishek1297/Parallel-Algorithms/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
