@@ -31,7 +31,7 @@ The queue ensures level-wise progression. This serial implementation has the tim
 
 This approach is somewhat similar to the serial implementation. While parallelizing BFS, the only way to traverse is level-wise. So as suggested in [B4] perform level-synchronous BFS where the current queue represents the current level. Instead of only visiting the front vertex of the queue, distribute each vertex to a thread to fill the next level queue in parallel. Even if the current vertex may have different paths, the level-synchronous approach makes sure that the overwrites by different threads will always be the same.
 
-<p align="center"> <img src="images/bfs_rep.jpg" width="350" height="400" /> </p>
+<p align="center"> <img src="images/bfs_rep.jpg" width="400" height="400" /> </p>
 
 ### Possible Problems
 - At a bare minimum, GPU requires around ~300 clock cycles to access global memory. It is always ideal to perform memory coalescing, where all the threads access the memory at the same time. It is important to maximize the bandwidth to global memory.
@@ -49,7 +49,7 @@ CUDA provides an L2 cache for each block where only threads running in that bloc
 Hierarchical Queue Approach
 As shown in [B1] it is possible to specialize the queue by adding another level for warps. Thus, avoiding collisions at the block-level queue as well. According to the indices of threads, each one is mapped to its respective sub-queue. The authors of the paper have implemented it such that they copy these sub-queues to the block-level queue. It seems unreasonable because both blocked-level and sub-queues reside inside shared memory. I have skipped copying to block-level and directly coalesced to global memory. Similar to the previous approach, when the sub-queue becomes full, the thread will write to the global queue.
 
-<p align="center"> <img src="images/hierar.jpg" width="650" height="450" /> </p>
+<p align="center"> <img src="images/hierar.jpg" width="750" height="450" /> </p>
 
 
 | **G** | **V** | **E** | **CPU** | **GPU-N** | **GPU-B** | **GPU-H** |
@@ -150,44 +150,3 @@ I have shown that GPGPU usage can be used to achieve high performance on Graph A
 [D2] _Pedro J. Martín, Roberto Torres, and Antonio Gavilanes, “CUDA Solutions for the SSSP Problem”_
 
 [D3] _Michael Kainer, Jesper Larsson Träff, “More Parallelism in Dijkstra’s Single-Source Shortest Path Algorithm”_
-
-
-## Welcome to GitHub Pages
-
-You can use the [editor on GitHub](https://github.com/abhishek1297/Parallel-Algorithms/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Summary
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/abhishek1297/Parallel-Algorithms/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
