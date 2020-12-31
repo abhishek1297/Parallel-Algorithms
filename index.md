@@ -98,7 +98,7 @@ The graphs shown above have the average outdegree between 2-3. Therefore, the ex
 
 <p align="center"> <img src="images/bargraph.png" width="600" height="450" /> </p>
 
-- The above graph was calculated on Network Graphs (Average Degree, Clustering Coefficient)of Google, Youtube, etc. Different clustering coefficient and the unevenly distributed outdegree at each vertex will reduce the performance. Therefore, the CPU implementation outperformed every other approach because each thread will have different workloads increasing execution time. The [D1] suggested approach will be better here. But this high variance of outdegree should be considered in Network Graphs where each vertex represents a user and its connections.
+- The above graph was calculated on Network Graphs (Average Degree, Clustering Coefficient)of Google, Youtube, etc. Different clustering coefficient and the unevenly distributed outdegree at each vertex will reduce the performance. The [D1] suggested approach will be better here. But this high variance of outdegree should be considered in Network Graphs where each vertex represents a user and its connections.
 
 ## Kernel Launch and Dynamic Parallelism 
 - CUDA provides a way to call the kernel within a kernel. This is called Dynamic Parallelism (DP). By calling the kernel recursively, we could maximize the throughput of the GPU by launching unused parts of it.
