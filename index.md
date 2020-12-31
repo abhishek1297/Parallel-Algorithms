@@ -31,7 +31,7 @@ The queue ensures level-wise progression. This serial implementation has the tim
 
 This approach is somewhat similar to the serial implementation. While parallelizing BFS, the only way to traverse is level-wise. So as suggested in [B4] perform level-synchronous BFS where the current queue represents the current level. Instead of only visiting the front vertex of the queue, distribute each vertex to a thread to fill the next level queue in parallel. Even if the current vertex may have different paths, the level-synchronous approach makes sure that the overwrites by different threads will always be the same.
 
-<p align="center"> <img src="images/bfs_rep.jpg" width="400" height="400" /> </p>
+<p align="center"> <img src="images/bfs_rep.jpg" width="350" height="450" /> </p>
 
 ### Possible Problems
 - At a bare minimum, GPU requires around ~300 clock cycles to access global memory. It is always ideal to perform memory coalescing, where all the threads access the memory at the same time. It is important to maximize the bandwidth to global memory.
