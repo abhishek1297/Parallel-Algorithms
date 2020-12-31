@@ -10,7 +10,7 @@ A general-purpose programming model by Nvidia that leverages the use of GPUs to 
 
 # Graph Representation
 A graph _G(V,E)_ can be represented as an Adjacency Matrix as well as an Adjacency List. Here, I have used an adjacency list due to their efficient use of space _O(V+E)_.  This list _A_ can be stored contiguously along with two more arrays,  _E_ which holds all the offsets, and, _O_ which holds the outdegree for a vertex _v_ which means _A[v]to A[v+O[v]]_ holds all the children. There can be an additional weighted array _W_  which is stored contiguously as well.  
-<p align="center"> <img src="images/graph_rep.jpg" width="500" height="350" /> </p>
+<p align="center"> <img src="images/graph_rep.jpg" width="600" height="350" /> </p>
 
 # Breadth-First Search
 ## Definition
@@ -31,7 +31,7 @@ The queue ensures level-wise progression. This serial implementation has the tim
 
 This approach is somewhat similar to the serial implementation. While parallelizing BFS, the only way to traverse is level-wise. So as suggested in [B4] perform level-synchronous BFS where the current queue represents the current level. Instead of only visiting the front vertex of the queue, distribute each vertex to a thread to fill the next level queue in parallel. Even if the current vertex may have different paths, the level-synchronous approach makes sure that the overwrites by different threads will always be the same.
 
-<p align="center"> <img src="images/bfs_rep.jpg" width="500" height="350" /> </p>
+<p align="center"> <img src="images/bfs_rep.jpg" width="350" height="350" /> </p>
 
 ### Possible Problems
 - At a bare minimum, GPU requires around ~300 clock cycles to access global memory. It is always ideal to perform memory coalescing, where all the threads access the memory at the same time. It is important to maximize the bandwidth to global memory.
@@ -49,7 +49,7 @@ CUDA provides an L2 cache for each block where only threads running in that bloc
 Hierarchical Queue Approach
 As shown in [B1] it is possible to specialize the queue by adding another level for warps. Thus, avoiding collisions at the block-level queue as well. According to the indices of threads, each one is mapped to its respective sub-queue. The authors of the paper have implemented it such that they copy these sub-queues to the block-level queue. It seems unreasonable because both blocked-level and sub-queues reside inside shared memory. I have skipped copying to block-level and directly coalesced to global memory. Similar to the previous approach, when the sub-queue becomes full, the thread will write to the global queue.
 
-<p align="center"> <img src="images/hierar.jpg" width="500" height="350" /> </p>
+<p align="center"> <img src="images/hierar.jpg" width="600" height="350" /> </p>
 
 
 | **G** | **V** | **E** | **CPU** | **GPU-N** | **GPU-B** | **GPU-H** |
@@ -87,16 +87,16 @@ BFS and Dijkstra’s hold very similar approaches except that we need to extract
 ## Atomic Operations
 To avoid inconsistencies at the global queue as well as the local queue(s). CUDA threads could make use of atomic operations to correctly fill the queues without overwriting at the same location. These atomic operations require an address at which the thread will make its manipulations. Thus, when calling these functions, threads will have exclusive access at that memory location. But the access becomes serialized and also affects the performance.
 
-<p align="center"> <img src="images/atomic.jpg" width="500" height="350" /> </p>
+<p align="center"> <img src="images/atomic.jpg" width="500" height="450" /> </p>
 
 ## Shared Memory
 - The shared memory in my GPU has 32 banks. Similarly, I have created a total of 32 queues of length 4 in Hierarchical-queue approach. In a way, it perfectly matches with all the banks. In GPUs with CC 6.1, the bank conflict does not occur at the warp level even if two threads from the same warp map to the same bank. This access will be parallel.
 - This approach does reduce collisions. But the naive approach has an advantage of simplicity i.e threads in naive implementation will not have much of divergence since each thread is only checking whether the current vertex is visited or not. If not, then write to global memory. Additionally, in the shared memory approaches, there are at most two writes, firstly to the lower queues and then the global queue. Altogether, These aspects deteriorate the performance by 6-8% compared to the naive BFS as shown in the graph below. 
-<p align="center"> <img src="images/linegraph.png" width="500" height="350" /> </p>
+<p align="center"> <img src="images/linegraph.png" width="600" height="450" /> </p>
 The graphs shown above have the average outdegree between 2-3. Therefore, the execution time is directly proportional to the number of vertices in regular or near-regular graphs.
 - Between blocked-queue and hierarchical-queue, the latter performs well on graphs with higher clustering coefficient. For smaller graphs, if we consider the thread divergence, both approaches share a similarity in their exploration process. But the conflict at the Hierarchical-queue is reduced. So, the reason why hierarchical-queue is slower for smaller graphs is, while loading the shared queues to the global queue will take more time because of more calculations required to map 2D addresses to 1D addresses.
 
-<p align="center"> <img src="images/bargraph.png" width="500" height="350" /> </p>
+<p align="center"> <img src="images/bargraph.png" width="600" height="450" /> </p>
 
 - The above graph was calculated on Network Graphs of Google, Youtube, etc. Different clustering coefficient and the unevenly distributed outdegree at each vertex will reduce the performance. Therefore, the CPU implementation outperformed every other approach because each thread will have different workloads increasing execution time. The [D1] suggested approach will be better here. But this high variance of outdegree should be considered in Network Graphs where each vertex represents a user and its connections.
 
